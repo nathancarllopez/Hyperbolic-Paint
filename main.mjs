@@ -106,7 +106,7 @@ colorTypeButtons.forEach(button => {
 
 // Color choice buttons event listener
 const defaultColorButtons = document.querySelectorAll('.default-color');
-defaultColorButtons[0].style.border = '2px solid white';
+defaultColorButtons[0].style.border = '2px solid gray';
 defaultColorButtons.forEach(
   button => button.addEventListener('click', event => changeColor(event))
 );
@@ -127,7 +127,7 @@ function changeColor(event) {
   // If there are selected shapes, update their colors
   if (shapes.selected.length > 0) {
     // Restore border for previous button
-    prevButton.style.border = '2px solid white';
+    prevButton.style.border = '2px solid gray';
 
     // Update stroke color of selected shapes
     if (canvasInfo.colorType === 'stroke') {
@@ -158,7 +158,7 @@ function changeColor(event) {
 
   // Otherwise, add border to the new button and update canvasInfo
   else {
-    colorButton.style.border = '2px solid white';
+    colorButton.style.border = '2px solid gray';
     if (canvasInfo.colorType === 'stroke') {
       canvasInfo.strokeStyle = selectedColor;
     } else {

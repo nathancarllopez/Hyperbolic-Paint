@@ -20,7 +20,7 @@
   <div class="toolbar">
     <!-- Select or draw tools -->
     <div class="tools">
-      <p class="toolbar-instructions">Choose a drawing tool</p>
+      <p class="toolbar-instructions">Drawing Tools</p>
       <input type="radio" id="clickDrag" name="tools" value="clickDrag" checked>
       <label for="clickDrag">
         <div class="tooltip">
@@ -62,11 +62,32 @@
     <!-- Colors -->
     <div class="colors">
       <!-- Stroke or fill selector -->
-      <p class="toolbar-instructions">Change the stroke- or fill-color</p>
+      <p class="toolbar-instructions">
+        <div class="tooltip">
+          Color Options
+          <span class="tooltiptext">
+            Change the colors of a selected shape or the pen.
+          </span>
+        </div>
+      </p>
       <input type="radio" id="stroke" name="color-type" value="stroke" checked>
-      <label for="stroke">Stroke Color</label>
+      <label for="stroke">
+        <div class="tooltip">
+          Stroke Color
+          <span class="tooltiptext">
+            The color of lines or the boundaries of polygons
+          </span>
+        </div>
+      </label><br>
       <input type="radio" id="fill" name="color-type" value="fill">
-      <label for="fill">Fill Color</label>
+      <label for="fill">
+        <div class="tooltip">
+          Fill Color
+          <span class="tooltiptext">
+            The interior color of a polygon
+          </span>
+        </div>
+      </label>
 
       <!-- Color buttons -->
       <div class="color-buttons">
@@ -75,22 +96,28 @@
         <div class="default-color" style="background: red;"></div>
         <div class="default-color" style="background: blue;"></div>
         <div class="default-color" style="background: green;"></div>
+        <div class="default-color" style="background: white;"></div>
       </div>
 
     </div>
 
     <!-- Line weight -->
     <div class="sizes">
-      <p class="toolbar-instructions">Adjust the line width and anchor size</p>
       <input type="range" min="1" max="10" class="line-width" id="line-width" value="1">
-      <label for="line-width">Stroke Width</label><br>
+      <label for="line-width">
+        <div class="tooltip">
+          Stroke Width
+          <span class="tooltiptext">
+            The size of lines.
+          </span>
+        </div>
+      </label><br>
     </div>
 
     <!-- Undo and clear -->
     <div class="action-buttons">
-      <p class="toolbar-instructions">Undo last change or clear the canvas</p>
       <button id="undo" type="button" class="button">Undo</button>
-      <button id="clear" type="button" class="button">Clear</button>
+      <button id="clear" type="button" class="button">Clear All</button>
     </div>
   </div>
 
