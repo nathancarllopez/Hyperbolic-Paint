@@ -96,17 +96,37 @@ function selectMove(e, canvasInfo, shapes) {
       startY = mouseY;
       
       // Adjust dragging lines
-      for (const line of shapes.lines) {
+      const linesCopy = [...shapes.lines];
+      for (let index = 0; index < linesCopy.length; index++) {
+        // Adjust this line if it is selected
+        const line = shapes.lines[index];
+        let newLine;
         if (line.selected) {
           for (const anchor of line.anchors) {
             if (anchor.selected) {
-              anchor.changeCoord(changeX, changeY);
+              newLine = line.recalculatePosition(changeX, changeY);
               break;
             }
           }
-          line.recalculatePosition();
+        }
+
+        // If the line was adjusted, remove it from shapes.lines and add the new line
+        if (newLine) {
+          shapes.lines = shapes.lines.slice(0, index).concat(shapes.lines.slice(index + 1))
+          shapes.lines.push(newLine);
         }
       }
+      // for (const line of shapes.lines) {
+      //   if (line.selected) {
+      //     for (const anchor of line.anchors) {
+      //       if (anchor.selected) {
+      //         anchor.changeCoord(changeX, changeY);
+      //         break;
+      //       }
+      //     }
+      //     line.recalculatePosition();
+      //   }
+      // }
 
       // Adjust dragging polygons
       // for (const polygon of shapes.polygons) {

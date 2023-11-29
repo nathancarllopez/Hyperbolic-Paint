@@ -197,33 +197,56 @@ class Line {
     }
   }
 
-  recalculatePosition() {
-    // Create a new line with this.anchors
+  recalculatePosition(changeX, changeY) {
+    // Adjust the selected anchor
+    const anchor1 = this.anchor1;
+    const anchor2 = this.anchor2;
+    for (const anchor of [anchor1, anchor2]) {
+      if (anchor.selected) {
+        anchor.changeCoord(changeX, changeY);
+        break;
+      }
+    }
+    const anchorSize = anchor1.anchorSize;
+
+    // Create a new line with the adjusted anchors
     const adjustedLine = new Line(this.canvasInfo, this.anchor1, this.anchor2);
 
-    // Update anchors
-    const change1X = adjustedLine.anchor1.x - this.anchor1.x;
-    const change1Y = adjustedLine.anchor1.y - this.anchor1.y;
-    this.anchor1.changeCoord(change1X, change1Y);
-    const change2X = adjustedLine.anchor2.x - this.anchor2.x;
-    const change2Y = adjustedLine.anchor2.y - this.anchor2.y;
-    this.anchor2.changeCoord(change2X, change2Y);
+    // Update the adjustedLine with the drawing properties of this
+    adjustedLine.selected = this.selected;
+    adjustedLine.strokeStyle = this.strokeStyle;
+    adjustedLine.lineWidth = this.lineWidth;
+    adjustedLine.segment = this.segment
+    adjustedLine.anchors.forEach(anchor => anchor.anchorSize = anchorSize);
+
+    return adjustedLine;
+
+    // // Create a new line with this.anchors
+    // const adjustedLine = new Line(this.canvasInfo, this.anchor1, this.anchor2);
+
+    // // Update anchors
+    // const change1X = adjustedLine.anchor1.x - this.anchor1.x;
+    // const change1Y = adjustedLine.anchor1.y - this.anchor1.y;
+    // this.anchor1.changeCoord(change1X, change1Y);
+    // const change2X = adjustedLine.anchor2.x - this.anchor2.x;
+    // const change2Y = adjustedLine.anchor2.y - this.anchor2.y;
+    // this.anchor2.changeCoord(change2X, change2Y);
   
-    // New line is a diameter
-    this.diameter = adjustedLine.diameter;
-    if (this.diameter) {
-      this.endpoint1 = adjustedLine.endpoint1;
-      this.endpoint2 = adjustedLine.endpoint2;
-    }
+    // // New line is a diameter
+    // this.diameter = adjustedLine.diameter;
+    // if (this.diameter) {
+    //   this.endpoint1 = adjustedLine.endpoint1;
+    //   this.endpoint2 = adjustedLine.endpoint2;
+    // }
   
-    // New line is not a diameter
-    else {
-      this.center = adjustedLine.center;
-      this.radius = adjustedLine.radius;
-      this.counterclockwise = adjustedLine.counterclockwise;
-      this.anchor1Arg = adjustedLine.anchor1Arg;
-      this.anchor2Arg = adjustedLine.anchor2Arg;
-    }
+    // // New line is not a diameter
+    // else {
+    //   this.center = adjustedLine.center;
+    //   this.radius = adjustedLine.radius;
+    //   this.counterclockwise = adjustedLine.counterclockwise;
+    //   this.anchor1Arg = adjustedLine.anchor1Arg;
+    //   this.anchor2Arg = adjustedLine.anchor2Arg;
+    // }
   }
 
   draw(canvasInfo) {
