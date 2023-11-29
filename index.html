@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperbolic Paint</title>
+  <link href="styles.css" type="text/css" rel="stylesheet">
+</head>
+<body>
+  <div>
+    <!-- Header -->
+    <h1>Hyperbolic Paint</h1>
+    <p>Here is where some introductory text will go...</p>
+
+    <!-- Canvas -->
+    <canvas width="600" height="600"></canvas>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <!-- Select or draw tools -->
+    <div class="tools">
+      <p class="toolbar-instructions">Choose a drawing tool</p>
+      <input type="radio" id="clickDrag" name="tools" value="clickDrag" checked>
+      <label for="clickDrag">
+        <div class="tooltip">
+          Click and Drag
+          <span class="tooltiptext">
+            Select or drag a shape by clicking one of its anchors.
+          </span>
+        </div>
+      </label><br>
+      <input type="radio" id="line" name="tools" value="line">
+      <label for="line">
+        <div class="tooltip">
+          Draw Full Line
+          <span class="tooltiptext">
+            Click two points to draw a line.
+          </span>
+        </div>
+      </label><br>
+      <input type="radio" id="segment" name="tools" value="segment">
+      <label for="segment">
+        <div class="tooltip">
+          Draw Line Segment
+          <span class="tooltiptext">
+            Click two points to draw a line segment.
+          </span>
+        </div>
+      </label><br>
+      <input type="radio" id="polygon" name="tools" value="polygon">
+      <label for="polygon">
+        <div class="tooltip">
+          Draw Polygon
+          <span class="tooltiptext">
+            Hold shift to click the last point.
+          </span>
+        </div>
+      </label><br>
+    </div>
+
+    <!-- Colors -->
+    <div class="colors">
+      <!-- Stroke or fill selector -->
+      <p class="toolbar-instructions">Change the stroke- or fill-color</p>
+      <input type="radio" id="stroke" name="color-type" value="stroke" checked>
+      <label for="stroke">Stroke Color</label>
+      <input type="radio" id="fill" name="color-type" value="fill">
+      <label for="fill">Fill Color</label>
+
+      <!-- Color buttons -->
+      <div class="color-buttons">
+        <!-- Default colors -->
+        <div class="default-color" style="background: black;"></div>
+        <div class="default-color" style="background: red;"></div>
+        <div class="default-color" style="background: blue;"></div>
+        <div class="default-color" style="background: green;"></div>
+      </div>
+
+    </div>
+
+    <!-- Line weight -->
+    <div class="sizes">
+      <p class="toolbar-instructions">Adjust the line width and anchor size</p>
+      <input type="range" min="1" max="10" class="line-width" id="line-width" value="1">
+      <label for="line-width">Stroke Width</label><br>
+    </div>
+
+    <!-- Undo and clear -->
+    <div class="action-buttons">
+      <p class="toolbar-instructions">Undo last change or clear the canvas</p>
+      <button id="undo" type="button" class="button">Undo</button>
+      <button id="clear" type="button" class="button">Clear</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="main.mjs"></script>
+</body>
+</html>
