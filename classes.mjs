@@ -23,6 +23,18 @@ class Point {
     }
   }
 
+  changeCoord(changeX, changeY) {
+    // Create a new point with the new coordinates
+    const adjustedPoint = new Point(this.x + changeX, this.y + changeY);
+
+    // Update the drawing properties for the adjusted point
+    adjustedPoint.selected = this.selected;
+    adjustedPoint.fillStyle = this.fillStyle;
+    adjustedPoint.anchorSize = this.anchorSize;
+
+    return adjustedPoint;
+  }
+
   static randPoint = () => new Point(Math.random(), Math.random());
   
   draw(canvasInfo, drawAnchor = true) {
@@ -88,11 +100,6 @@ class Point {
       return [normThis, oppNormThis];
     }
     return [oppNormThis, normThis];
-  }
-
-  changeCoord(changeX, changeY) {
-    this.x = this.x + changeX;
-    this.y = this.y + changeY;
   }
 
   // Equality
@@ -233,16 +240,18 @@ class Line {
     // Adjust the selected anchor
     const anchor1 = this.anchor1;
     const anchor2 = this.anchor2;
+    const adjustedAnchors = [];
     for (const anchor of [anchor1, anchor2]) {
       if (anchor.selected) {
-        anchor.changeCoord(changeX, changeY);
-        break;
+        adjustedAnchors.push(anchor.changeCoord(changeX, changeY));
+      } else {
+        adjustedAnchors.push(anchor);
       }
     }
     const anchorSize = anchor1.anchorSize;
 
     // Create a new line with the adjusted anchors
-    const adjustedLine = new Line(this.canvasInfo, this.anchor1, this.anchor2);
+    const adjustedLine = new Line(this.canvasInfo, ...adjustedAnchors);
 
     // Update the adjustedLine with the drawing properties of this
     adjustedLine.selected = this.selected;
@@ -331,7 +340,7 @@ class Polygon {
     for (let index = 0; index < this.edges.length; index++) {
       const edge = this.edges[index];
       if (edge.selected) {
-        newEdges[index] = edge.recalculatePosition(0.5 * changeX, 0.5 * changeY);
+        newEdges[index] = edge.recalculatePosition(changeX, changeY);
       }
     }
 

@@ -26,7 +26,7 @@ function displayCursor(e, canvasInfo, shapes) {
 }
 
 function selectDown(e, canvasInfo, shapes) {
-  console.log('start down', shapes.selected);
+  // console.log('start down', shapes.selected);
 
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
@@ -92,7 +92,7 @@ function selectDown(e, canvasInfo, shapes) {
     drawAll(canvasInfo, shapes);
   }
 
-  console.log('end down', shapes.selected);
+  // console.log('end down', shapes.selected);
 }
 
 function selectMove(e, canvasInfo, shapes) {
@@ -188,6 +188,8 @@ function selectUp(e, canvasInfo, shapes) {
   shapes.cursor.display = true;
   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
   shapes.cursor.point = new Point(mouseX, mouseY);
+
+  console.log(shapes.lines[0]);
 
   // Redraw the canvas
   drawAll(canvasInfo, shapes);
