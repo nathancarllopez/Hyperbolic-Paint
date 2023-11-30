@@ -321,7 +321,7 @@ class Polygon {
   //   }
   // }
 
-  draw(canvasInfo, fill = true) {
+  draw(canvasInfo, fill = false) {
     // Draw the edges
     this.edges.forEach(edge => edge.draw(canvasInfo));
 

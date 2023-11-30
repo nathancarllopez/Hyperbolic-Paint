@@ -44,7 +44,6 @@ const shapes = {
   selected: [],
   clickedPoints: []
 }
-console.log(shapes.polygons);
 drawAll(canvasInfo, shapes);
 
 // Display cursor and select tool event listeners
@@ -127,25 +126,29 @@ function changeColor(event) {
 
     // Update stroke color of selected shapes
     if (canvasInfo.colorType === 'stroke') {
-      // Lines
-      for (const line of shapes.lines) {
-        if (line.selected) {
-          line.strokeStyle = selectedColor;
-        }
-      }
-    }
-    
-    // Otherwise
-    else {
-      // Lines
+      // Line stroke color
       for (const line of shapes.lines) {
         if (line.selected) {
           line.strokeStyle = selectedColor;
         }
       }
 
-      // Polygons
-      // TO DO
+      // Polygon stroke color
+      for (const polygon of shapes.polygons) {
+        if (polygon.selected) {
+          polygon.edges.forEach(edge => edge.strokeStyle = selectedColor);
+        }
+      }
+    }
+    
+    // Otherwise, update fill color
+    else {
+      // Polygon fill color
+      for (const polygon of shapes.polygons) {
+        if (polygon.selected) {
+          polygon.fillStyle = selectedColor;
+        }
+      }
     }
 
     // Redraw the canvas
@@ -184,7 +187,17 @@ function changeLineWidth(event) {
     }
 
     // Polygons
-    // TO DO
+    for (const polygon of shapes.polygons) {
+      if (polygon.selected) {
+        const change = newLineWidth - polygon.edges[0].lineWidth;
+        for (const edge of polygon.edges) {
+          edge.lineWidth = newLineWidth;
+          for (const anchor of edge.anchors) {
+            anchor.anchorSize = anchor.anchorSize + change;
+          }
+        }
+      }
+    }
 
     // Redraw the canvas
     drawAll(canvasInfo, shapes);
