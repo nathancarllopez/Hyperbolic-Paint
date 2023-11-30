@@ -26,7 +26,7 @@ function displayCursor(e, canvasInfo, shapes) {
 }
 
 function selectDown(e, canvasInfo, shapes) {
-  console.log(shapes.selected);
+  console.log('start down', shapes.selected);
 
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
@@ -55,12 +55,25 @@ function selectDown(e, canvasInfo, shapes) {
 
     // Check if a polygon vertex was selected
     for (const polygon of shapes.polygons) {
-      for (const vertex of polygon.vertices) {
-        if (pointClicked(vertex, mouseX, mouseY, vertex.anchorSize)) {
-          vertex.selected = true;
-          vertex.fillStyle = 'gray';
+      const selectedEdges = [];
+      for (const edge of polygon.edges) {
+        // Otherwise, search the anchors of this edge
+        for (const anchor of edge.anchors) {
+          if (pointClicked(anchor, mouseX, mouseY, anchor.anchorSize)) {
+            anchor.selected = true;
+            anchor.fillStyle = 'black';
+            edge.selected = true;
+            selectedEdges.push(edge);
+            break;
+          }
+        }
+
+        // If we've found two selected edges, stop searching this polygon
+        if (selectedEdges.length === 2) {
           polygon.selected = true;
+          selectedEdges.forEach(edge => shapes.selected.push(edge));
           shapes.selected.push(polygon);
+          break;
         }
       }
     }
@@ -78,6 +91,8 @@ function selectDown(e, canvasInfo, shapes) {
     // Redraw the canvas
     drawAll(canvasInfo, shapes);
   }
+
+  console.log('end down', shapes.selected);
 }
 
 function selectMove(e, canvasInfo, shapes) {
@@ -96,48 +111,60 @@ function selectMove(e, canvasInfo, shapes) {
       startY = mouseY;
       
       // Adjust dragging lines
-      const linesCopy = [...shapes.lines];
-      for (let index = 0; index < linesCopy.length; index++) {
-        // Adjust this line if it is selected
+      const newLines = {}
+      for (let index = 0; index < shapes.lines.length; index++) {
         const line = shapes.lines[index];
-        let newLine;
         if (line.selected) {
           for (const anchor of line.anchors) {
             if (anchor.selected) {
-              newLine = line.recalculatePosition(changeX, changeY);
+              newLines[index] = line.recalculatePosition(changeX, changeY);
               break;
             }
           }
         }
+      }
 
-        // If the line was adjusted, remove it from shapes.lines and add the new line
-        if (newLine) {
-          shapes.lines = shapes.lines.slice(0, index).concat(shapes.lines.slice(index + 1))
-          shapes.lines.push(newLine);
+      // If any lines were dragged, update shapes.lines
+      if (Object.keys(newLines).length > 0) {
+        for (const index in newLines) {
+          shapes.lines[index] = newLines[index];
         }
       }
-      // for (const line of shapes.lines) {
-      //   if (line.selected) {
-      //     for (const anchor of line.anchors) {
-      //       if (anchor.selected) {
-      //         anchor.changeCoord(changeX, changeY);
-      //         break;
-      //       }
-      //     }
-      //     line.recalculatePosition();
-      //   }
-      // }
 
       // Adjust dragging polygons
-      // for (const polygon of shapes.polygons) {
+      const newPolys = {}
+      for (let index = 0; index < shapes.polygons.length; index++) {
+        const polygon = shapes.polygons[index];
+        if (polygon.selected) {
+          newPolys[index] = polygon.recalculatePosition(changeX, changeY);
+        }
+      }
+
+      // If any polygons were dragged, update shapes.polygons
+      if (Object.keys(newPolys).length > 0) {
+        for (const index in newPolys) {
+          shapes.polygons[index] = newPolys[index];
+        }
+      }
+
+      // // Adjust dragging polygons
+      // const newPolys = {}
+      // for (let index = 0; index < shapes.polygons.length; index++) {
+      //   const polygon = shapes.polygons[index];
       //   if (polygon.selected) {
       //     for (const vertex of polygon.vertices) {
       //       if (vertex.selected) {
-      //         vertex.changeCoord(changeX, changeY);
+      //         newPolys[index] = polygon.recalculatePosition(changeX, changeY);
       //         break;
       //       }
       //     }
-      //     polygon.recalculatePosition();
+      //   }
+      // }
+
+      // // If any polygons were dragged, update shapes.polygons
+      // if (Object.keys(newPolys).length > 0) {
+      //   for (const index in newPolys) {
+      //     shapes.polygons[index] = newPolys[index];
       //   }
       // }
     }
@@ -207,7 +234,15 @@ function polygonClick(e, canvasInfo, shapes) {
 
     // If at least three points have been clicked and shift is pressed
     if (shapes.clickedPoints.length > 2 && e.shiftKey) {
-      shapes.polygons.push(new Polygon(canvasInfo, ...shapes.clickedPoints));
+      const edges = [];
+      for (let index = 0; index < shapes.clickedPoints.length; index++) {
+        const vertex1 = shapes.clickedPoints[index];
+        const vertex2 = index === shapes.clickedPoints.length - 1 ?
+          shapes.clickedPoints[0] :
+          shapes.clickedPoints[index + 1];
+        edges.push(new Line(canvasInfo, vertex1, vertex2));
+      }
+      shapes.polygons.push(new Polygon(canvasInfo, ...edges));
       shapes.clickedPoints.length = 0;
     }
 
@@ -215,6 +250,31 @@ function polygonClick(e, canvasInfo, shapes) {
     drawAll(canvasInfo, shapes);
   }
 }
+
+// function polygonClick(e, canvasInfo, shapes) {
+//   // Get canvas coordinates
+//   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
+
+//   // If cursor is inside boundary
+//   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
+//   if (cursorInside) {
+//     // Reset shapes and clear selected shapes
+//     resetShapes(shapes);
+//     shapes.selected.length = 0;
+
+//     // Add clicked point to shapes.clickedPoints
+//     shapes.clickedPoints.push(new Point(mouseX, mouseY));
+
+//     // If at least three points have been clicked and shift is pressed
+//     if (shapes.clickedPoints.length > 2 && e.shiftKey) {
+//       shapes.polygons.push(new Polygon(canvasInfo, ...shapes.clickedPoints));
+//       shapes.clickedPoints.length = 0;
+//     }
+
+//     // Redraw the canvas
+//     drawAll(canvasInfo, shapes);
+//   }
+// }
 
 export { displayCursor, selectDown, selectMove, selectUp, lineClick, polygonClick }
 

@@ -1,6 +1,6 @@
 import { drawAll } from "./drawToCanvas.mjs";
 import { displayCursor, selectDown, selectMove, selectUp, lineClick, polygonClick } from "./drawingHandlers.mjs";
-import { Point, Line } from "./classes.mjs";
+import { Point, Line, Polygon } from "./classes.mjs";
 
 // Initialize canvas
 const canvas = document.querySelector('canvas');
@@ -15,7 +15,7 @@ const canvasInfo = {
   activeTool: 'clickDrag',
   colorType: 'stroke',
   strokeStyle: 'black',
-  fillStyle: 'white',
+  fillStyle: 'blue',
   lineWidth: 1,
   anchorSize: 5,
 }
@@ -34,22 +34,17 @@ const randRoll = () => {
   } while (re**2 + im**2 > 1);
   return [re * canvasInfo.radius, im * canvasInfo.radius];
 };
+const [pointA, pointB, pointC] = [randRoll(), randRoll(), randRoll()]
 const shapes = {
   cursor: {
     display: false
   },
-  lines: [
-    new Line(
-      canvasInfo,
-      new Point(...randRoll()),
-      new Point(...randRoll())
-    )
-  ],
+  lines: [],
   polygons: [],
   selected: [],
   clickedPoints: []
 }
-console.log(shapes.lines);
+console.log(shapes.polygons);
 drawAll(canvasInfo, shapes);
 
 // Display cursor and select tool event listeners
@@ -126,6 +121,7 @@ function changeColor(event) {
 
   // If there are selected shapes, update their colors
   if (shapes.selected.length > 0) {
+    console.log(shapes.selected);
     // Restore border for previous button
     prevButton.style.border = '2px solid gray';
 
@@ -201,35 +197,6 @@ function changeLineWidth(event) {
     canvasInfo.lineWidth = newLineWidth;
   }
 }
-
-// // Anchor size range event listener
-// const anchorSizeRange = document.querySelector('.anchor-size');
-// anchorSizeRange.addEventListener('input', event => changeAnchorSize(event));
-// function changeAnchorSize(event) {
-//   // Get new anchor size
-//   const newAnchorSize = Number(event.target.value);
-
-//   // If there are selected shapes, update their line widths
-//   if (shapes.selected.length > 0) {
-//     // Lines
-//     for (const line of shapes.lines) {
-//       if (line.selected) {
-//         line.anchors.forEach(anchor => anchor.anchorSize = newAnchorSize);
-//       }
-//     }
-
-//     // Polygons
-//     // TO DO
-
-//     // Redraw the canvas
-//     drawAll(canvasInfo, shapes);
-//   }
-
-//   // Otherwise, update canvasInfo
-//   else {
-//     canvasInfo.lineWidth = newAnchorSize;
-//   }
-// }
 
 // Undo button
 const shapeHistory = [];

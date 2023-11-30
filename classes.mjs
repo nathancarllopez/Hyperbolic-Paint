@@ -23,11 +23,15 @@ class Point {
     }
   }
 
+  static randPoint = () => new Point(Math.random(), Math.random());
+  
   draw(canvasInfo, drawAnchor = true) {
     // Prepare the label
     const ctx = canvasInfo.ctx;
-    const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
-    const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
+    // const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
+    // const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
+    const xLabel = Math.round(100 * (this.x))/100;
+    const yLabel = Math.round(100 * (this.y))/100;
     const label = `(${xLabel}, ${yLabel})`;
 
     // Draw the point
@@ -43,6 +47,30 @@ class Point {
     ctx.fillText(label, this.x + anchorSize, -(this.y + anchorSize));
     ctx.fillStyle = canvasInfo.fillStyle;
     ctx.scale(1, -1);
+  }
+
+  isOnADiameterWith(that, error = 0) {
+    // Reject if both points are zero
+    if (this.isZero() && that.isZero()) {
+      throw "Both points cannot be zero"
+    }
+
+    // Return true if exactly one of the points is zero
+    if (this.isZero() || that.isZero()) {
+      return this.isZero() !== that.isZero()
+    }
+
+    // Return true if the points have the same argument
+    const argDiff = Math.abs(this.argument - that.argument);
+    if (
+      argDiff <= error ||
+      Math.abs(argDiff - Math.PI) <= error
+    ) {
+      return true
+    }
+
+    // Otherwise return false
+    return false;
   }
 
   getDiameterEndpoints(canvasInfo) {
@@ -110,6 +138,10 @@ class Point {
     return result;
   }
   //#endregion
+
+  toString() {
+    return `(${this.x}, ${this.y})`;
+  }
 }
 
 class Line {
@@ -122,7 +154,6 @@ class Line {
     // Drawing properties
     this.canvasInfo = canvasInfo;
     this.selected = false;
-    this.strokeStyle = canvasInfo.strokeStyle;
     this.lineWidth = canvasInfo.lineWidth;
     this.segment = canvasInfo.activeTool === 'segment' || canvasInfo.activeTool === 'polygon';
 
@@ -145,8 +176,10 @@ class Line {
       this.anchors.forEach(anchor => anchor.anchorSize = canvasInfo.anchorSize);
     }
     
-    // If the points have the same argument, return a diameter through either
-    else if (point1.argument === point2.argument) {
+    // If the points have the same argument (mod pi), return a diameter through either
+    else if (
+      point1.isOnADiameterWith(point2, 0.01)
+    ) {
       this.diameter = true;
       const diameterEndpoints = point1.getDiameterEndpoints(canvasInfo);
       this.endpoint1 = diameterEndpoints[0];
@@ -189,8 +222,7 @@ class Line {
       this.anchors = [this.anchor1, this.anchor2];
       this.anchors.forEach(anchor => anchor.anchorSize = canvasInfo.anchorSize);
 
-      // Determine whether to draw line counterclockwise
-      // and the anchor angles (relative to the center)
+      // Determine whether to draw line counterclockwise and the anchor angles (relative to the line center)
       this.counterclockwise = !(this.anchor2.argument > this.anchor1.argument + Math.PI);
       this.anchor1Arg = (this.anchor1.minus(this.center)).argument;
       this.anchor2Arg = (this.anchor2.minus(this.center)).argument;
@@ -214,39 +246,11 @@ class Line {
 
     // Update the adjustedLine with the drawing properties of this
     adjustedLine.selected = this.selected;
-    adjustedLine.strokeStyle = this.strokeStyle;
     adjustedLine.lineWidth = this.lineWidth;
     adjustedLine.segment = this.segment
     adjustedLine.anchors.forEach(anchor => anchor.anchorSize = anchorSize);
 
     return adjustedLine;
-
-    // // Create a new line with this.anchors
-    // const adjustedLine = new Line(this.canvasInfo, this.anchor1, this.anchor2);
-
-    // // Update anchors
-    // const change1X = adjustedLine.anchor1.x - this.anchor1.x;
-    // const change1Y = adjustedLine.anchor1.y - this.anchor1.y;
-    // this.anchor1.changeCoord(change1X, change1Y);
-    // const change2X = adjustedLine.anchor2.x - this.anchor2.x;
-    // const change2Y = adjustedLine.anchor2.y - this.anchor2.y;
-    // this.anchor2.changeCoord(change2X, change2Y);
-  
-    // // New line is a diameter
-    // this.diameter = adjustedLine.diameter;
-    // if (this.diameter) {
-    //   this.endpoint1 = adjustedLine.endpoint1;
-    //   this.endpoint2 = adjustedLine.endpoint2;
-    // }
-  
-    // // New line is not a diameter
-    // else {
-    //   this.center = adjustedLine.center;
-    //   this.radius = adjustedLine.radius;
-    //   this.counterclockwise = adjustedLine.counterclockwise;
-    //   this.anchor1Arg = adjustedLine.anchor1Arg;
-    //   this.anchor2Arg = adjustedLine.anchor2Arg;
-    // }
   }
 
   draw(canvasInfo) {
@@ -276,46 +280,57 @@ class Line {
       }
     }
     ctx.stroke();
-    ctx.strokeStyle = canvasInfo.strokeStyle;
   }
 }
 
 class Polygon {
-  constructor(canvasInfo, ...vertices) {
-    // Reject if less than 3 vertices given
-    if (vertices.length < 3) {
+  constructor(canvasInfo, ...edges) {
+    // Reject if less than 3 edges are given
+    if (edges.length < 3) {
       throw "We need at least three points to determine a polygon";
     }
 
     // Drawing properties
+    this.canvasInfo = canvasInfo;
     this.selected = false;
-    this.fillStyle = 'blue';
+    this.fillStyle = this.canvasInfo.fillStyle;
 
-    // Build the edges and edge-vertex map
-    this.vertices = vertices;
-    this.edges = [];
-    for (let vertexNum = 0; vertexNum < vertices.length; vertexNum++) {
-      const vertex1 = vertices[vertexNum];
-      const vertex2 = vertexNum === vertices.length - 1 ?
-        vertices[0] :
-        vertices[vertexNum + 1];
-      this.edges.push(new Line(canvasInfo, vertex1, vertex2));
-    }
+    // Record the edges
+    this.edges = edges;
   }
 
-  draw(canvasInfo, fill = true) {
-    // Draw the vertices
-    this.vertices.forEach(vertex => vertex.draw(canvasInfo));
+  // constructor(canvasInfo, ...vertices) {
+  //   // Reject if less than 3 vertices given
+  //   if (vertices.length < 3) {
+  //     throw "We need at least three points to determine a polygon";
+  //   }
 
+  //   // Drawing properties
+  //   this.selected = false;
+  //   this.fillStyle = 'blue';
+
+  //   // Build the edges
+  //   this.vertices = vertices;
+  //   this.edges = [];
+  //   for (let vertexNum = 0; vertexNum < vertices.length; vertexNum++) {
+  //     const vertex1 = vertices[vertexNum];
+  //     const vertex2 = vertexNum === vertices.length - 1 ?
+  //       vertices[0] :
+  //       vertices[vertexNum + 1];
+  //     this.edges.push(new Line(canvasInfo, vertex1, vertex2));
+  //   }
+  // }
+
+  draw(canvasInfo, fill = true) {
     // Draw the edges
     this.edges.forEach(edge => edge.draw(canvasInfo));
 
     // Fill the interior
     if (fill) {
       const ctx = canvasInfo.ctx;
-      const firstVertex = this.vertices[0];
       ctx.beginPath();
       ctx.fillStyle = this.fillStyle;
+      const firstVertex = this.edges[0].anchor1;
       ctx.moveTo(firstVertex.x, firstVertex.y);
       for (const edge of this.edges) {
         if (edge.diameter) {
@@ -324,16 +339,62 @@ class Polygon {
           ctx.arc(edge.center.x, edge.center.y, edge.radius, edge.anchor1Arg, edge.anchor2Arg, edge.counterclockwise);
         }
       }
-      ctx.fill()
+      ctx.fill();
     }
   }
+
+  // draw(canvasInfo, fill = true) {
+  //   // Draw the vertices
+  //   this.vertices.forEach(vertex => vertex.draw(canvasInfo));
+
+  //   // Draw the edges
+  //   this.edges.forEach(edge => edge.draw(canvasInfo));
+
+  //   // Fill the interior
+  //   if (fill) {
+  //     const ctx = canvasInfo.ctx;
+  //     const firstVertex = this.vertices[0];
+  //     ctx.beginPath();
+  //     ctx.fillStyle = this.fillStyle;
+  //     ctx.moveTo(firstVertex.x, firstVertex.y);
+  //     for (const edge of this.edges) {
+  //       if (edge.diameter) {
+  //         ctx.lineTo(edge.anchor2.x, edge.anchor2.y);
+  //       } else {
+  //         ctx.arc(edge.center.x, edge.center.y, edge.radius, edge.anchor1Arg, edge.anchor2Arg, edge.counterclockwise);
+  //       }
+  //     }
+  //     ctx.fill()
+  //   }
+  // }
 
   getVertexEdges(vertex) {
     return this.edges.filter(edge => edge.anchor1.isEqualTo(vertex) || edge.anchor2.isEqualTo(vertex))
   }
 
-  recalculatePosition() {
+  recalculatePosition(changeX, changeY) {
+    // Adjust the edges connected to the selected vertex
+    const newEdges = {};
+    for (let index = 0; index < this.edges.length; index++) {
+      const edge = this.edges[index];
+      if (edge.selected) {
+        newEdges[index] = edge.recalculatePosition(changeX, changeY);
+      }
+    }
 
+    // Create a copy of the current edges and replace the adjusted edges
+    const edgesCopy = [...this.edges];
+    for (const index in newEdges) {
+      edgesCopy[index] = newEdges[index];
+    }
+
+    // Create a new polygon with the adjusted vertices
+    const adjustedPolygon = new Polygon(this.canvasInfo, ...edgesCopy);
+
+    // Update the adjusted polygons drawing properties to match this
+    adjustedPolygon.selected = this.selected;
+
+    return adjustedPolygon;
   }
 }
 

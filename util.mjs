@@ -12,6 +12,7 @@ function pointClicked(point, mouseX, mouseY, anchorSize) {
 function resetShapes(shapesToReset) {
   // Reset lines
   for (const line of shapesToReset.lines) {
+    line.selected = false;
     for (const anchor of line.anchors) {
       anchor.selected = false;
       anchor.fillStyle = 'gray';
@@ -20,9 +21,13 @@ function resetShapes(shapesToReset) {
 
   // Reset polygons
   for (const polygon of shapesToReset.polygons) {
-    for (const vertex of polygon.vertices) {
-      vertex.selected = false;
-      vertex.fillStyle = 'gray';
+    polygon.selected = false;
+    for (const edge of polygon.edges) {
+      edge.selected = false;
+      for (const anchor of edge.anchors) {
+        anchor.selected = false;
+        anchor.fillStyle = 'gray';
+      }
     }
   }
 }
