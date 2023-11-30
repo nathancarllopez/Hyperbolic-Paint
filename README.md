@@ -18,5 +18,3 @@ To do:
 
 - Create introductory text (maybe in a collapsible section, or off to the left side?)
 
-- Make polygons draggable
-

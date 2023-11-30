@@ -299,28 +299,6 @@ class Polygon {
     this.edges = edges;
   }
 
-  // constructor(canvasInfo, ...vertices) {
-  //   // Reject if less than 3 vertices given
-  //   if (vertices.length < 3) {
-  //     throw "We need at least three points to determine a polygon";
-  //   }
-
-  //   // Drawing properties
-  //   this.selected = false;
-  //   this.fillStyle = 'blue';
-
-  //   // Build the edges
-  //   this.vertices = vertices;
-  //   this.edges = [];
-  //   for (let vertexNum = 0; vertexNum < vertices.length; vertexNum++) {
-  //     const vertex1 = vertices[vertexNum];
-  //     const vertex2 = vertexNum === vertices.length - 1 ?
-  //       vertices[0] :
-  //       vertices[vertexNum + 1];
-  //     this.edges.push(new Line(canvasInfo, vertex1, vertex2));
-  //   }
-  // }
-
   draw(canvasInfo, fill = false) {
     // Draw the edges
     this.edges.forEach(edge => edge.draw(canvasInfo));
@@ -343,31 +321,6 @@ class Polygon {
     }
   }
 
-  // draw(canvasInfo, fill = true) {
-  //   // Draw the vertices
-  //   this.vertices.forEach(vertex => vertex.draw(canvasInfo));
-
-  //   // Draw the edges
-  //   this.edges.forEach(edge => edge.draw(canvasInfo));
-
-  //   // Fill the interior
-  //   if (fill) {
-  //     const ctx = canvasInfo.ctx;
-  //     const firstVertex = this.vertices[0];
-  //     ctx.beginPath();
-  //     ctx.fillStyle = this.fillStyle;
-  //     ctx.moveTo(firstVertex.x, firstVertex.y);
-  //     for (const edge of this.edges) {
-  //       if (edge.diameter) {
-  //         ctx.lineTo(edge.anchor2.x, edge.anchor2.y);
-  //       } else {
-  //         ctx.arc(edge.center.x, edge.center.y, edge.radius, edge.anchor1Arg, edge.anchor2Arg, edge.counterclockwise);
-  //       }
-  //     }
-  //     ctx.fill()
-  //   }
-  // }
-
   getVertexEdges(vertex) {
     return this.edges.filter(edge => edge.anchor1.isEqualTo(vertex) || edge.anchor2.isEqualTo(vertex))
   }
@@ -378,7 +331,7 @@ class Polygon {
     for (let index = 0; index < this.edges.length; index++) {
       const edge = this.edges[index];
       if (edge.selected) {
-        newEdges[index] = edge.recalculatePosition(changeX, changeY);
+        newEdges[index] = edge.recalculatePosition(0.5 * changeX, 0.5 * changeY);
       }
     }
 
