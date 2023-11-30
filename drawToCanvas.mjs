@@ -51,21 +51,11 @@ function drawShapes(canvasInfo, shapes) {
         }
         break;
       }
+      case 'clickedPoints':
+      case 'polygons':
       case 'lines': {
-        for (const line of shapes[shapeType]) {
-          line.draw(canvasInfo);
-        }
-        break;
-      }
-      case 'clickedPoints': {
-        for (const point of shapes[shapeType]) {
-          point.draw(canvasInfo);
-        }
-        break;
-      }
-      case 'polygons': {
-        for (const polygon of shapes[shapeType]) {
-          polygon.draw(canvasInfo)
+        for (const shape of shapes[shapeType]) {
+          shape.draw(canvasInfo);
         }
         break;
       }
@@ -74,54 +64,3 @@ function drawShapes(canvasInfo, shapes) {
 }
 
 export { drawAll, drawBoundary }
-
-function plotAndLabelPoint(xCoord, yCoord, canvasInfo, plot = true) {
-  const ctx = canvasInfo.ctx;
-  const radius = canvasInfo.radius;
-  const real = Math.round(1000 * xCoord/radius)/1000;
-  const imaginary = Math.round(1000 * yCoord/radius)/1000;
-  const anchorSize = canvasInfo.anchorSize;
-  const label = `${real} + ${imaginary}i`;
-
-  ctx.scale(1, -1);
-  if (plot) {
-    ctx.fillRect(xCoord - anchorSize/2, -anchorSize/2 - yCoord, anchorSize, anchorSize);
-  }
-  ctx.font = canvasInfo.font;
-  ctx.fillText(label, xCoord + anchorSize/2, -(yCoord + anchorSize/2));
-  ctx.scale(1, -1);
-}
-
-function plotLineOrSegment(line, canvasInfo) {
-  const ctx = canvasInfo.ctx;
-  for (const anchorLabel in line.anchors) {
-    const anchor = line.anchors[anchorLabel]
-    if (anchor.display) {
-      ctx.fillStyle = anchor.fill;
-      plotAndLabelPoint(anchor.x, anchor.y, canvasInfo);
-    }
-  }
-  ctx.beginPath();
-  if (line.segment) {
-    ctx.moveTo(line.anchors.anchor1.x, line.anchors.anchor1.y);
-    ctx.arc(line.centerX, line.centerY, line.radius, line.anchors.anchor1.angle, line.anchors.anchor2.angle);
-  } else {
-    ctx.moveTo(line.centerX + line.radius, line.centerY);
-    ctx.arc(line.centerX, line.centerY, line.radius, 0, 7);
-  }
-  ctx.stroke();
-}
-
-// for (const line of shapes[shapeType]) {
-//   for (const anchor of line.anchors) {
-//     if (anchor.display) {
-//       ctx.fillStyle = anchor.fill;
-//       plotAndLabelPoint(anchor.x, anchor.y, canvasInfo);
-//       ctx.fillStyle = 'black';
-//     }
-//   }
-//   ctx.beginPath();
-//   ctx.moveTo(line.centerX + line.radius, line.centerY);
-//   ctx.arc(line.centerX, line.centerY, line.radius, 0, 7);
-//   ctx.stroke();
-// }

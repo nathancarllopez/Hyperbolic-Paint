@@ -1,6 +1,6 @@
 import { Point, Line, Polygon } from "./classes.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
-import { getCanvasCoord, pointClicked, resetShapes } from "./util.mjs";
+import { getCanvasCoord, unselectAllShapes, adjustDraggingShapes } from "./util.mjs";
 
 // const selected = [];
 // const dragging = [];
@@ -26,60 +26,57 @@ function displayCursor(e, canvasInfo, shapes) {
 }
 
 function selectDown(e, canvasInfo, shapes) {
-  // console.log('start down', shapes.selected);
-
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
 
-  // If cursor is inside boundary
+  // If cursor is inside boundary...
   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
   if (cursorInside) {
     // Turn off the cursor
     shapes.cursor.display = false;
 
-    // Clear out any previous selected shapes
-    resetShapes(shapes);
-    shapes.selected.length = 0;
+    // Clear out any previously selected shapes
+    unselectAllShapes(shapes);
 
-    // Check if a line anchor was selected
+    // Check if a line was selected
     for (const line of shapes.lines) {
       for (const anchor of line.anchors) {
-        if (pointClicked(anchor, mouseX, mouseY, anchor.anchorSize)) {
+        if (anchor.pointClicked(mouseX, mouseY)) {
           anchor.selected = true;
           anchor.fillStyle = 'black';
           line.selected = true;
-          shapes.selected.push(line);
-        }
-      }
-    }
-
-    // Check if a polygon vertex was selected
-    for (const polygon of shapes.polygons) {
-      const selectedEdges = [];
-      for (const edge of polygon.edges) {
-        // Otherwise, search the anchors of this edge
-        for (const anchor of edge.anchors) {
-          if (pointClicked(anchor, mouseX, mouseY, anchor.anchorSize)) {
-            anchor.selected = true;
-            anchor.fillStyle = 'black';
-            edge.selected = true;
-            selectedEdges.push(edge);
-            break;
-          }
-        }
-
-        // If we've found two selected edges, stop searching this polygon
-        if (selectedEdges.length === 2) {
-          polygon.selected = true;
-          selectedEdges.forEach(edge => shapes.selected.push(edge));
-          shapes.selected.push(polygon);
+          shapes.selected = true;
           break;
         }
       }
     }
 
-    // If a shape was clicked
-    if (shapes.selected.length > 0) {
+    // Check if a polygon was selected
+    for (const polygon of shapes.polygons) {
+      let numSelectedEdges = 0;
+      for (const edge of polygon.edges) {
+        // Search the anchors of this edge
+        for (const anchor of edge.anchors) {
+          if (anchor.pointClicked(mouseX, mouseY)) {
+            anchor.selected = true;
+            anchor.fillStyle = 'black';
+            edge.selected = true;
+            numSelectedEdges++;
+            break;
+          }
+        }
+
+        // Once we've found two selected edges, stop searching this polygon
+        if (numSelectedEdges === 2) {
+          polygon.selected = true;
+          shapes.selected = true;
+          break;
+        }
+      }
+    }
+
+    // If a shape was clicked...
+    if (shapes.selected) {
       // Update start position
       startX = mouseX;
       startY = mouseY;
@@ -88,11 +85,19 @@ function selectDown(e, canvasInfo, shapes) {
       dragging = true;
     }
 
-    // Redraw the canvas
-    drawAll(canvasInfo, shapes);
+    // Otherwise, unselect all shapes
+    else {
+      unselectAllShapes(shapes);
+    }
   }
 
-  // console.log('end down', shapes.selected);
+  // Otherwise, unselect all shapes
+  else {
+    unselectAllShapes(shapes);
+  }
+
+  // Redraw the canvas
+  drawAll(canvasInfo, shapes);
 }
 
 function selectMove(e, canvasInfo, shapes) {
@@ -111,68 +116,16 @@ function selectMove(e, canvasInfo, shapes) {
       startY = mouseY;
       
       // Adjust dragging lines
-      const newLines = {}
-      for (let index = 0; index < shapes.lines.length; index++) {
-        const line = shapes.lines[index];
-        if (line.selected) {
-          for (const anchor of line.anchors) {
-            if (anchor.selected) {
-              newLines[index] = line.recalculatePosition(changeX, changeY);
-              break;
-            }
-          }
-        }
-      }
-
-      // If any lines were dragged, update shapes.lines
-      if (Object.keys(newLines).length > 0) {
-        for (const index in newLines) {
-          shapes.lines[index] = newLines[index];
-        }
-      }
+      adjustDraggingShapes(shapes.lines, changeX, changeY);
 
       // Adjust dragging polygons
-      const newPolys = {}
-      for (let index = 0; index < shapes.polygons.length; index++) {
-        const polygon = shapes.polygons[index];
-        if (polygon.selected) {
-          newPolys[index] = polygon.recalculatePosition(changeX, changeY);
-        }
-      }
-
-      // If any polygons were dragged, update shapes.polygons
-      if (Object.keys(newPolys).length > 0) {
-        for (const index in newPolys) {
-          shapes.polygons[index] = newPolys[index];
-        }
-      }
-
-      // // Adjust dragging polygons
-      // const newPolys = {}
-      // for (let index = 0; index < shapes.polygons.length; index++) {
-      //   const polygon = shapes.polygons[index];
-      //   if (polygon.selected) {
-      //     for (const vertex of polygon.vertices) {
-      //       if (vertex.selected) {
-      //         newPolys[index] = polygon.recalculatePosition(changeX, changeY);
-      //         break;
-      //       }
-      //     }
-      //   }
-      // }
-
-      // // If any polygons were dragged, update shapes.polygons
-      // if (Object.keys(newPolys).length > 0) {
-      //   for (const index in newPolys) {
-      //     shapes.polygons[index] = newPolys[index];
-      //   }
-      // }
+      adjustDraggingShapes(shapes.polygons, changeX, changeY);
     }
 
-    // Otherwise, reset shapes and clear out selected array
+    // Otherwise, reset shapes and turn off dragging flag
     else {
-      resetShapes(shapes);
-      shapes.selected.length = 0;
+      unselectAllShapes(shapes);
+      dragging = false;
     }
 
     // Redraw the canvas
@@ -186,26 +139,24 @@ function selectUp(e, canvasInfo, shapes) {
 
   // Turn cursor on
   shapes.cursor.display = true;
-  const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
-  shapes.cursor.point = new Point(mouseX, mouseY);
-
-  console.log(shapes.lines[0]);
+  shapes.cursor.point = new Point(...getCanvasCoord(e, canvasInfo))
 
   // Redraw the canvas
   drawAll(canvasInfo, shapes);
 }
 
 function lineClick(e, canvasInfo, shapes) {
+  // Unselect any selected shapes
+  if (shapes.selected) {
+    unselectAllShapes(shapes);
+  }
+
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
 
   // If cursor is inside boundary
   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
   if (cursorInside) {
-    // Reset shapes and clear selected shapes
-    resetShapes(shapes);
-    shapes.selected.length = 0;
-
     // Add clicked point to shapes.clickedPoints
     shapes.clickedPoints.push(new Point(mouseX, mouseY));
 
@@ -221,16 +172,17 @@ function lineClick(e, canvasInfo, shapes) {
 }
 
 function polygonClick(e, canvasInfo, shapes) {
+  // Unselect any selected shapes
+  if (shapes.selected) {
+    unselectAllShapes(shapes);
+  }
+
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
 
   // If cursor is inside boundary
   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
   if (cursorInside) {
-    // Reset shapes and clear selected shapes
-    resetShapes(shapes);
-    shapes.selected.length = 0;
-
     // Add clicked point to shapes.clickedPoints
     shapes.clickedPoints.push(new Point(mouseX, mouseY));
 
@@ -252,31 +204,6 @@ function polygonClick(e, canvasInfo, shapes) {
     drawAll(canvasInfo, shapes);
   }
 }
-
-// function polygonClick(e, canvasInfo, shapes) {
-//   // Get canvas coordinates
-//   const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
-
-//   // If cursor is inside boundary
-//   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
-//   if (cursorInside) {
-//     // Reset shapes and clear selected shapes
-//     resetShapes(shapes);
-//     shapes.selected.length = 0;
-
-//     // Add clicked point to shapes.clickedPoints
-//     shapes.clickedPoints.push(new Point(mouseX, mouseY));
-
-//     // If at least three points have been clicked and shift is pressed
-//     if (shapes.clickedPoints.length > 2 && e.shiftKey) {
-//       shapes.polygons.push(new Polygon(canvasInfo, ...shapes.clickedPoints));
-//       shapes.clickedPoints.length = 0;
-//     }
-
-//     // Redraw the canvas
-//     drawAll(canvasInfo, shapes);
-//   }
-// }
 
 export { displayCursor, selectDown, selectMove, selectUp, lineClick, polygonClick }
 

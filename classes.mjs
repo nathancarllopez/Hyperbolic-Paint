@@ -23,6 +23,10 @@ class Point {
     }
   }
 
+  pointClicked(mouseX, mouseY) {
+    return (mouseX - this.x)**2 + (mouseY - this.y)**2 < this.anchorSize**2;
+  }
+
   changeCoord(changeX, changeY) {
     // Create a new point with the new coordinates
     const adjustedPoint = new Point(this.x + changeX, this.y + changeY);
@@ -57,7 +61,6 @@ class Point {
     ctx.font = '14px serif'
     ctx.scale(1, -1);
     ctx.fillText(label, this.x + anchorSize, -(this.y + anchorSize));
-    ctx.fillStyle = canvasInfo.fillStyle;
     ctx.scale(1, -1);
   }
 
@@ -161,8 +164,9 @@ class Line {
     // Drawing properties
     this.canvasInfo = canvasInfo;
     this.selected = false;
-    this.lineWidth = canvasInfo.lineWidth;
-    this.segment = canvasInfo.activeTool === 'segment' || canvasInfo.activeTool === 'polygon';
+    this.strokeStyle = this.canvasInfo.strokeStyle
+    this.lineWidth = this.canvasInfo.lineWidth;
+    this.segment = this.canvasInfo.activeTool === 'segment' || this.canvasInfo.activeTool === 'polygon';
 
     // If one of the points is zero, return a diameter through the other
     if (point1.isZero() || point2.isZero()) {
@@ -254,8 +258,10 @@ class Line {
     const adjustedLine = new Line(this.canvasInfo, ...adjustedAnchors);
 
     // Update the adjustedLine with the drawing properties of this
+    adjustedLine.canvasInfo = this.canvasInfo
     adjustedLine.selected = this.selected;
     adjustedLine.lineWidth = this.lineWidth;
+    adjustedLine.strokeStyle = this.strokeStyle;
     adjustedLine.segment = this.segment
     adjustedLine.anchors.forEach(anchor => anchor.anchorSize = anchorSize);
 
@@ -302,7 +308,7 @@ class Polygon {
     // Drawing properties
     this.canvasInfo = canvasInfo;
     this.selected = false;
-    this.fillStyle = canvasInfo.fillStyle;
+    this.fillStyle = this.canvasInfo.fillStyle;
 
     // Record the edges
     this.edges = edges;
@@ -316,14 +322,14 @@ class Polygon {
       ctx.fillStyle = this.fillStyle;
       const firstVertex = this.edges[0].anchor1;
       ctx.moveTo(firstVertex.x, firstVertex.y);
-      for (const edge of this.edges) {
+      for (const edge of this.edges) { // We may need to figure out how to traverse the edges clockwise
         if (edge.diameter) {
           ctx.lineTo(edge.anchor2.x, edge.anchor2.y);
         } else {
           ctx.arc(edge.center.x, edge.center.y, edge.radius, edge.anchor1Arg, edge.anchor2Arg, edge.counterclockwise);
         }
       }
-      ctx.moveTo(firstVertex.x, firstVertex.y);
+      // ctx.moveTo(firstVertex.x, firstVertex.y);
       ctx.fill();
     }
 
@@ -331,12 +337,8 @@ class Polygon {
     this.edges.forEach(edge => edge.draw(canvasInfo));
   }
 
-  getVertexEdges(vertex) {
-    return this.edges.filter(edge => edge.anchor1.isEqualTo(vertex) || edge.anchor2.isEqualTo(vertex))
-  }
-
   recalculatePosition(changeX, changeY) {
-    // Adjust the edges connected to the selected vertex
+    // Adjust the selected edges
     const newEdges = {};
     for (let index = 0; index < this.edges.length; index++) {
       const edge = this.edges[index];
@@ -355,7 +357,9 @@ class Polygon {
     const adjustedPolygon = new Polygon(this.canvasInfo, ...edgesCopy);
 
     // Update the adjusted polygons drawing properties to match this
+    adjustedPolygon.canvasInfo = this.canvasInfo;
     adjustedPolygon.selected = this.selected;
+    adjustedPolygon.fillStyle = this.fillStyle;
 
     return adjustedPolygon;
   }

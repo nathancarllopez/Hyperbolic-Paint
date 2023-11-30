@@ -1,5 +1,6 @@
 import { drawAll } from "./drawToCanvas.mjs";
 import { displayCursor, selectDown, selectMove, selectUp, lineClick, polygonClick } from "./drawingHandlers.mjs";
+import { unselectAllShapes } from "./util.mjs";
 
 // Initialize canvas
 const canvas = document.querySelector('canvas');
@@ -33,15 +34,14 @@ const randRoll = () => {
   } while (re**2 + im**2 > 1);
   return [re * canvasInfo.radius, im * canvasInfo.radius];
 };
-const [pointA, pointB, pointC] = [randRoll(), randRoll(), randRoll()]
 const shapes = {
   lines: [],
   polygons: [],
-  selected: [],
   clickedPoints: [],
   cursor: {
     display: false
   },
+  selected: false
 }
 drawAll(canvasInfo, shapes);
 
@@ -82,6 +82,9 @@ function switchToolListeners(event) {
 
   // Update canvasInfo
   canvasInfo.activeTool = event.target.id;
+  if (canvasInfo.activeTool !== 'clickDrag') {
+    unselectAllShapes(shapes);
+  }
   
   // Add canvas event tools for new tool
   for (const args of toolListenersMap[canvasInfo.activeTool]) {
@@ -114,16 +117,16 @@ function changeColor(event) {
     if (button.style.border) {
       prevButton = button;
       button.style.removeProperty('border');
+      break;
     }
   }
 
   // If there are selected shapes, update their colors
-  if (shapes.selected.length > 0) {
-    console.log(shapes.selected);
+  if (shapes.selected) {
     // Restore border for previous button
     prevButton.style.border = '2px solid gray';
 
-    // Update stroke color of selected shapes
+    // Update stroke color
     if (canvasInfo.colorType === 'stroke') {
       // Line stroke color
       for (const line of shapes.lines) {
@@ -140,8 +143,8 @@ function changeColor(event) {
       }
     }
     
-    // Otherwise, update fill color
-    else {
+    // Update fill color
+    if (canvasInfo.colorType === 'fill') {
       // Polygon fill color
       for (const polygon of shapes.polygons) {
         if (polygon.selected) {
@@ -173,7 +176,7 @@ function changeLineWidth(event) {
   const newLineWidth = event.target.value;
 
   // If there are selected shapes, update their line widths
-  if (shapes.selected.length > 0) {
+  if (shapes.selected) {
     // Lines
     for (const line of shapes.lines) {
       if (line.selected) {
@@ -191,9 +194,9 @@ function changeLineWidth(event) {
         const change = newLineWidth - polygon.edges[0].lineWidth;
         for (const edge of polygon.edges) {
           edge.lineWidth = newLineWidth;
-          for (const anchor of edge.anchors) {
-            anchor.anchorSize = anchor.anchorSize + change;
-          }
+          edge.anchors.forEach(anchor =>
+            anchor.anchorSize = anchor.anchorSize + change
+          );
         }
       }
     }
