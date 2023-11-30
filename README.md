@@ -8,7 +8,9 @@ I used W3 schools tooltips page for the toolbar as well: https://www.w3schools.c
 bugs to fix:
 - Opening/closing dev tools causes the coordinates of the mouse cursor appear in the wrong place. Refreshing fixes the issue
 
-- polygons sometimes fill incorrectly, but it's hard to reproduce. It seems that triangles fill fine, but more than three vertices is weird. Update: it looks like having obtuse angles is the issue... or maybe not, jeez.
+- polygons sometimes fill incorrectly, but it's hard to reproduce. It seems that triangles fill fine, but more than three vertices is weird. Update: it looks like having obtuse angles is the issue... or maybe not, jeez. I think it's an orientation thing?
+
+- Fill/stroke color of polygons changes when the polygon is dragged
 
 To do:
 

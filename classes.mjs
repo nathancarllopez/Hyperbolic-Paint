@@ -40,10 +40,10 @@ class Point {
   draw(canvasInfo, drawAnchor = true) {
     // Prepare the label
     const ctx = canvasInfo.ctx;
-    // const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
-    // const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
-    const xLabel = Math.round(100 * (this.x))/100;
-    const yLabel = Math.round(100 * (this.y))/100;
+    const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
+    const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
+    // const xLabel = Math.round(100 * (this.x))/100;
+    // const yLabel = Math.round(100 * (this.y))/100;
     const label = `(${xLabel}, ${yLabel})`;
 
     // Draw the point
@@ -302,16 +302,13 @@ class Polygon {
     // Drawing properties
     this.canvasInfo = canvasInfo;
     this.selected = false;
-    this.fillStyle = this.canvasInfo.fillStyle;
+    this.fillStyle = canvasInfo.fillStyle;
 
     // Record the edges
     this.edges = edges;
   }
 
-  draw(canvasInfo, fill = false) {
-    // Draw the edges
-    this.edges.forEach(edge => edge.draw(canvasInfo));
-
+  draw(canvasInfo, fill = true) {
     // Fill the interior
     if (fill) {
       const ctx = canvasInfo.ctx;
@@ -326,8 +323,12 @@ class Polygon {
           ctx.arc(edge.center.x, edge.center.y, edge.radius, edge.anchor1Arg, edge.anchor2Arg, edge.counterclockwise);
         }
       }
+      ctx.moveTo(firstVertex.x, firstVertex.y);
       ctx.fill();
     }
+
+    // Draw the edges
+    this.edges.forEach(edge => edge.draw(canvasInfo));
   }
 
   getVertexEdges(vertex) {

@@ -1,6 +1,5 @@
 import { drawAll } from "./drawToCanvas.mjs";
 import { displayCursor, selectDown, selectMove, selectUp, lineClick, polygonClick } from "./drawingHandlers.mjs";
-import { Point, Line, Polygon } from "./classes.mjs";
 
 // Initialize canvas
 const canvas = document.querySelector('canvas');
@@ -15,8 +14,8 @@ const canvasInfo = {
   activeTool: 'clickDrag',
   colorType: 'stroke',
   strokeStyle: 'black',
-  fillStyle: 'blue',
-  lineWidth: 1,
+  fillStyle: 'white',
+  lineWidth: document.querySelector('#line-width').value,
   anchorSize: 5,
 }
 
@@ -36,13 +35,13 @@ const randRoll = () => {
 };
 const [pointA, pointB, pointC] = [randRoll(), randRoll(), randRoll()]
 const shapes = {
-  cursor: {
-    display: false
-  },
   lines: [],
   polygons: [],
   selected: [],
-  clickedPoints: []
+  clickedPoints: [],
+  cursor: {
+    display: false
+  },
 }
 drawAll(canvasInfo, shapes);
 
@@ -224,8 +223,24 @@ const clearButton = document.querySelector('#clear');
 clearButton.addEventListener('click', event => {
   shapes.lines.length = 0;
   shapes.polygons.length = 0;
+  shapes.clickedPoints.length = 0;
   drawAll(canvasInfo, shapes);
 })
+
+// Delete key to
+document.addEventListener('keydown', (e) => {
+  if (shapes.selected.length > 0) {
+    const key = e.key;
+    if (key === 'Backspace' || key === 'Delete') {
+      for (const shapeType in shapes) {
+        if (shapeType !== 'cursor') {
+          shapes[shapeType] = shapes[shapeType].filter(shape => !shape.selected);
+        }
+      }
+      drawAll(canvasInfo, shapes);
+    }
+  }
+});
 
 // Naming event listener functions so they can be removed
 function handleSelectDown(event) {
