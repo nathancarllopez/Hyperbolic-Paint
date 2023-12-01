@@ -5,7 +5,7 @@ import { deepCopyShapes, unselectAllShapes } from "./util.mjs";
 // Initialize canvas
 const canvas = document.querySelector('canvas');
 const BDRYPADDING = 5;
-const boundRect = canvas.getBoundingClientRect();
+let boundRect = canvas.getBoundingClientRect();
 const canvasInfo = {
   ctx: canvas.getContext('2d'),
   width: canvas.width,
@@ -46,8 +46,19 @@ let shapes = {
 }
 drawAll(canvasInfo, shapes);
 
-// Display cursor and select tool event listeners
+// Display cursor event listeners
 canvas.addEventListener('mousemove', e => displayCursor(e, canvasInfo, shapes));
+canvas.addEventListener('mouseleave', e => {
+  canvasInfo.cursor.display = false;
+  drawAll(canvasInfo, shapes);
+});
+window.addEventListener('resize', e => {
+  boundRect = canvas.getBoundingClientRect();
+  canvasInfo.offsetX = boundRect.left + canvas.width/2;
+  canvasInfo.offsetY = boundRect.top + canvas.width/2;
+})
+
+// Select tool event listeners
 canvas.addEventListener('mousedown', handleSelectDown);
 canvas.addEventListener('mousemove', handleSelectMove);
 canvas.addEventListener('mouseup', handleSelectUp);
