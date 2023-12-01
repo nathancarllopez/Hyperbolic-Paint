@@ -18,3 +18,5 @@ Next steps:
 - Add mobius transformations to be able to transform the plane and the shapes
 
 - Add free drawing tool
+
+- Make everything mobile friendly

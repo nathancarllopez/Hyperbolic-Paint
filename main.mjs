@@ -62,6 +62,9 @@ window.addEventListener('resize', e => {
 canvas.addEventListener('mousedown', handleSelectDown);
 canvas.addEventListener('mousemove', handleSelectMove);
 canvas.addEventListener('mouseup', handleSelectUp);
+canvas.addEventListener('touchdown', handleSelectDown);
+canvas.addEventListener('touchmove', handleSelectMove);
+canvas.addEventListener('touchup', handleSelectUp);
 
 // Drawing tool buttons event listeners
 const drawingToolButtons = document.querySelectorAll('input[name="tools"]');
@@ -74,7 +77,10 @@ function switchToolListeners(event) {
     clickDrag: [
       ['mousedown', handleSelectDown],
       ['mousemove', handleSelectMove],
-      ['mouseup', handleSelectUp]
+      ['mouseup', handleSelectUp],
+      ['touchdown', handleSelectDown],
+      ['touchmove', handleSelectMove],
+      ['touchup', handleSelectUp]
     ],
     line: [
       ['click', handleLineClick]
