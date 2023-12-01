@@ -2,6 +2,14 @@ function drawAll(canvasInfo, shapes) {
   clearCanvas(canvasInfo);
   drawShapes(canvasInfo, shapes);
   drawBoundary(canvasInfo);
+  drawCursor(canvasInfo, shapes); 
+}
+
+function drawCursor(canvasInfo, shapes) {
+  const cursor = canvasInfo.cursor;
+  if (cursor.display) {
+    cursor.point.draw(canvasInfo, false);
+  }
 }
 
 function clearCanvas(canvasInfo) {
@@ -43,21 +51,9 @@ function drawBoundary(canvasInfo) {
 
 function drawShapes(canvasInfo, shapes) {
   for (const shapeType in shapes) {
-    switch(shapeType) {
-      case 'cursor': {
-        const cursor = shapes[shapeType];
-        if (cursor.display) {
-          cursor.point.draw(canvasInfo, false);
-        }
-        break;
-      }
-      case 'clickedPoints':
-      case 'polygons':
-      case 'lines': {
-        for (const shape of shapes[shapeType]) {
-          shape.draw(canvasInfo);
-        }
-        break;
+    if (['clickedPoints', 'polygons', 'lines'].includes(shapeType)) {
+      for (const shape of shapes[shapeType]) {
+        shape.draw(canvasInfo);
       }
     }
   }

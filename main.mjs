@@ -1,6 +1,6 @@
 import { drawAll } from "./drawToCanvas.mjs";
 import { displayCursor, selectDown, selectMove, selectUp, lineClick, polygonClick } from "./drawingHandlers.mjs";
-import { unselectAllShapes } from "./util.mjs";
+import { deepCopyShapes, unselectAllShapes } from "./util.mjs";
 
 // Initialize canvas
 const canvas = document.querySelector('canvas');
@@ -18,6 +18,10 @@ const canvasInfo = {
   fillStyle: 'white',
   lineWidth: document.querySelector('#line-width').value,
   anchorSize: 5,
+  shapeHistory: [],
+  cursor: {
+    display: false
+  },
 }
 
 // Reorient context
@@ -34,13 +38,10 @@ const randRoll = () => {
   } while (re**2 + im**2 > 1);
   return [re * canvasInfo.radius, im * canvasInfo.radius];
 };
-const shapes = {
+let shapes = {
   lines: [],
   polygons: [],
   clickedPoints: [],
-  cursor: {
-    display: false
-  },
   selected: false
 }
 drawAll(canvasInfo, shapes);
@@ -126,6 +127,9 @@ function changeColor(event) {
     // Restore border for previous button
     prevButton.style.border = '2px solid gray';
 
+    // Save a copy of the current shapes
+    canvasInfo.shapeHistory.push(deepCopyShapes(shapes));
+
     // Update stroke color
     if (canvasInfo.colorType === 'stroke') {
       // Line stroke color
@@ -177,6 +181,9 @@ function changeLineWidth(event) {
 
   // If there are selected shapes, update their line widths
   if (shapes.selected) {
+    // Save a copy of the current shapes
+    canvasInfo.shapeHistory.push(deepCopyShapes(shapes));
+
     // Lines
     for (const line of shapes.lines) {
       if (line.selected) {
@@ -214,36 +221,36 @@ function changeLineWidth(event) {
 }
 
 // Undo button
-const shapeHistory = [];
-let historyIndex = -1;
 const undoButton = document.querySelector('#undo');
-undoButton.addEventListener('click', event =>
-  console.log('undo')
-);
+undoButton.addEventListener('click', event => {
+  if (canvasInfo.shapeHistory.length > 0) {
+    shapes = canvasInfo.shapeHistory.pop();
+    drawAll(canvasInfo, shapes);
+  }
+});
 
 // Clear button
 const clearButton = document.querySelector('#clear');
 clearButton.addEventListener('click', event => {
+  canvasInfo.shapeHistory.push(deepCopyShapes(shapes));
   shapes.lines.length = 0;
   shapes.polygons.length = 0;
   shapes.clickedPoints.length = 0;
   drawAll(canvasInfo, shapes);
-})
-
-// Delete key to
-document.addEventListener('keydown', (e) => {
-  if (shapes.selected.length > 0) {
-    const key = e.key;
-    if (key === 'Backspace' || key === 'Delete') {
-      for (const shapeType in shapes) {
-        if (shapeType !== 'cursor') {
-          shapes[shapeType] = shapes[shapeType].filter(shape => !shape.selected);
-        }
-      }
-      drawAll(canvasInfo, shapes);
-    }
-  }
 });
+
+// // Delete key to
+// document.addEventListener('keydown', (e) => {
+//   if (shapes.selected.length > 0) {
+//     const key = e.key;
+//     if (key === 'Backspace' || key === 'Delete') {
+//       for (const shapeType in shapes) {
+//         shapes[shapeType] = shapes[shapeType].filter(shape => !shape.selected);
+//       }
+//       drawAll(canvasInfo, shapes);
+//     }
+//   }
+// });
 
 // Naming event listener functions so they can be removed
 function handleSelectDown(event) {

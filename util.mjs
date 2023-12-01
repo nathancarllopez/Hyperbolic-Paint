@@ -75,4 +75,31 @@ function adjustDraggingShapes(shapeArray, changeX, changeY) {
   }
 }
 
-export { getCanvasCoord, unselectAllShapes, adjustDraggingShapes }
+function deepCopyShapes(shapes) {
+  // Create an empty object as a copy
+  const deepCopy = {
+    lines: [],
+    polygons: [],
+    clickedPoints: [],
+    selected: shapes.selected
+  };
+
+  // Copy the lines
+  for (const line of shapes.lines) {
+    deepCopy.lines.push(line.recalculatePosition(0, 0))
+  }
+
+  // Copy the polygons
+  for (const polygon of shapes.polygons) {
+    deepCopy.polygons.push(polygon.recalculatePosition(0, 0));
+  }
+
+  // Copy the clicked points
+  for (const clicked of shapes.clickedPoints) {
+    deepCopy.clickedPoints.push(clicked.changeCoord(0, 0));
+  }
+
+  return deepCopy;
+}
+
+export { getCanvasCoord, unselectAllShapes, adjustDraggingShapes, deepCopyShapes }

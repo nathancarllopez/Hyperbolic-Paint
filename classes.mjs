@@ -44,10 +44,10 @@ class Point {
   draw(canvasInfo, drawAnchor = true) {
     // Prepare the label
     const ctx = canvasInfo.ctx;
-    const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
-    const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
-    // const xLabel = Math.round(100 * (this.x))/100;
-    // const yLabel = Math.round(100 * (this.y))/100;
+    // const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
+    // const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
+    const xLabel = Math.round(100 * (this.x))/100;
+    const yLabel = Math.round(100 * (this.y))/100;
     const label = `(${xLabel}, ${yLabel})`;
 
     // Draw the point

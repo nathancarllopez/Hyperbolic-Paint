@@ -1,10 +1,11 @@
 import { Point, Line, Polygon } from "./classes.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
-import { getCanvasCoord, unselectAllShapes, adjustDraggingShapes } from "./util.mjs";
+import { getCanvasCoord, unselectAllShapes, adjustDraggingShapes, deepCopyShapes } from "./util.mjs";
 
 // const selected = [];
 // const dragging = [];
 let dragging = false;
+let shapesMoved = false;
 let startX;
 let startY;
 
@@ -15,10 +16,10 @@ function displayCursor(e, canvasInfo, shapes) {
   // Only display the cursor inside the boundary while not dragging
   const cursorOutside = mouseX**2 + mouseY**2 > canvasInfo.radius**2;
   if (cursorOutside || dragging) {
-    shapes.cursor.display = false;
+    canvasInfo.cursor.display = false;
   } else {
-    shapes.cursor.display = true;
-    shapes.cursor.point = new Point(mouseX, mouseY);
+    canvasInfo.cursor.display = true;
+    canvasInfo.cursor.point = new Point(mouseX, mouseY);
   }
 
   // Redraw the canvas
@@ -32,8 +33,8 @@ function selectDown(e, canvasInfo, shapes) {
   // If cursor is inside boundary...
   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
   if (cursorInside) {
-    // Turn off the cursor
-    shapes.cursor.display = false;
+    // // Turn off the cursor
+    // shapes.cursor.display = false;
 
     // Clear out any previously selected shapes
     unselectAllShapes(shapes);
@@ -83,6 +84,9 @@ function selectDown(e, canvasInfo, shapes) {
 
       // Turn on dragging flag
       dragging = true;
+
+      // Save a copy of current shapes
+      canvasInfo.shapeHistory.push(deepCopyShapes(shapes));
     }
 
     // Otherwise, unselect all shapes
@@ -102,6 +106,7 @@ function selectDown(e, canvasInfo, shapes) {
 
 function selectMove(e, canvasInfo, shapes) {
   // Only proceed if a shape is being dragged
+  // if (shapes.selected) {
   if (dragging) {
     // Get canvas coordinates
     const [mouseX, mouseY] = getCanvasCoord(e, canvasInfo);
@@ -109,6 +114,9 @@ function selectMove(e, canvasInfo, shapes) {
     // Adjust shapes if inside boundary
     const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
     if (cursorInside) {
+      // Turn on shapes moved flag
+      shapesMoved = true;
+
       // Calculate movement
       const changeX = mouseX - startX;
       const changeY = mouseY - startY;
@@ -134,15 +142,45 @@ function selectMove(e, canvasInfo, shapes) {
 }
 
 function selectUp(e, canvasInfo, shapes) {
-  // Turn off dragging flag
+  // Turn off the dragging flag
   dragging = false;
 
-  // Turn cursor on
-  shapes.cursor.display = true;
-  shapes.cursor.point = new Point(...getCanvasCoord(e, canvasInfo))
+  // Turn the cursor on
+  canvasInfo.cursor.display = true;
+  canvasInfo.cursor.point = new Point(...getCanvasCoord(e, canvasInfo));
 
-  // Redraw the canvas
-  drawAll(canvasInfo, shapes);
+  // If no shape was moved, remove the saved shapes
+  if (!shapesMoved) {
+    canvasInfo.shapeHistory.pop();
+  }
+
+  // Otherwise, turn off the shapes moved flag
+  else {
+    shapesMoved = false;
+  }
+
+  // // If shapes were moved...
+  // if (shapesMoved) {
+  //   // Turn off the shapes moved flag
+  //   shapesMoved = false;
+
+  //   // Save the current shapes
+  //   canvasInfo.shapeHistory.push(shapes);
+  //   console.log(canvasInfo.shapeHistory);
+
+  //   // Redraw the canvas
+  //   drawAll(canvasInfo, shapes);
+  // }
+
+  // // Turn off dragging flag
+  // dragging = false;
+
+  // Turn cursor on
+  // shapes.cursor.display = true;
+  // shapes.cursor.point = new Point(...getCanvasCoord(e, canvasInfo))
+
+  // // Redraw the canvas
+  // drawAll(canvasInfo, shapes);
 }
 
 function lineClick(e, canvasInfo, shapes) {
@@ -157,6 +195,9 @@ function lineClick(e, canvasInfo, shapes) {
   // If cursor is inside boundary
   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
   if (cursorInside) {
+    // Save a copy of the current shapes
+    canvasInfo.shapeHistory.push(deepCopyShapes(shapes));
+
     // Add clicked point to shapes.clickedPoints
     shapes.clickedPoints.push(new Point(mouseX, mouseY));
 
@@ -183,6 +224,9 @@ function polygonClick(e, canvasInfo, shapes) {
   // If cursor is inside boundary
   const cursorInside = mouseX**2 + mouseY**2 <= canvasInfo.radius**2;
   if (cursorInside) {
+    // Save a copy of the current shapes
+    canvasInfo.shapeHistory.push(deepCopyShapes(shapes));
+
     // Add clicked point to shapes.clickedPoints
     shapes.clickedPoints.push(new Point(mouseX, mouseY));
 

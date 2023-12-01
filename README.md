@@ -13,8 +13,6 @@ bugs to fix:
 
 To do:
 
-- Add undo functionality
-
 - Create introductory text (maybe in a collapsible section, or off to the left side?)
 
 Next steps:
