@@ -1,7 +1,7 @@
 body {
   display: flex;
   justify-content: center;
-  padding: 30px;
+  padding: 10px;
   font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
   background: darkslategray;
   color: aliceblue;
@@ -9,6 +9,17 @@ body {
 
 canvas {
   box-shadow: 0 0 4px 4px black;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+a {
+  color: #FEB435;
+}
+
+p {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .toolbar {
