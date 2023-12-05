@@ -31,32 +31,6 @@ function unselectAllShapes(hypCanvas) {
   }
 }
 
-// function unselectAllShapes(shapes) {
-//   // Clear out selected shapes array
-//   shapes.selected.length = 0;
-
-//   // Reset lines selected property
-//   for (const line of shapes.lines) {
-//     line.selected = false;
-//     for (const anchor of line.anchors) {
-//       anchor.selected = false;
-//       anchor.fillStyle = 'gray';
-//     }
-//   }
-
-//   // Reset polygons selected property
-//   for (const polygon of shapes.polygons) {
-//     polygon.selected = false;
-//     for (const edge of polygon.edges) {
-//       edge.selected = false;
-//       for (const anchor of edge.anchors) {
-//         anchor.selected = false;
-//         anchor.fillStyle = 'gray';
-//       }
-//     }
-//   }
-// }
-
 function adjustDraggingShapes(shapeArray, changeX, changeY) {
   // Adjust selected shapes
   const newShapes = {}

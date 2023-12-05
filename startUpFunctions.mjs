@@ -6,7 +6,9 @@ import { lineClick, polygonClick, selectDown, selectMove, selectUp } from "./too
 /**
  * STARTUP
  */
-attachDefaultEventListeners(createHypCanvas());
+let hypCanvas = createHypCanvas()
+attachDefaultEventListeners(hypCanvas);
+console.log(hypCanvas);
 
 /**
  * FUNCTIONS TO RUN AT STARTUP

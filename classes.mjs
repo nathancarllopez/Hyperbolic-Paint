@@ -52,22 +52,14 @@ class HypCanvas {
       this.activeTransform = 'rotate';
       this.colorType = 'stroke';
       this.strokeStyle = 'black';
-      this.fillStyle = 'white';
-      this.lineWidth = 3;
+      this.fillStyle = 'orange';
+      this.lineWidth = 2;
       this.anchorSize = 5;
-
-      // Initialize shapes and cursor
-      // const HALF = new Point(0.5 * this.radius, 0);
-      // const HALFI = new Point(0, 0.5 * this.radius);
-      // const LINE0 = new Line(this, HALF, HALFI)
 
       this.shapes = {
         clickedPoints: [],
         lines: [],
-        // lines: [
-        //   LINE0
-        // ],
-        polygons: [],
+        polygons: [genRandomTriangle(this)],
       };
       this.shapeHistory = [];
       this.cursor = { display: false};
@@ -578,6 +570,31 @@ class Mobius {
       return new Polygon(shape.hypCanvas, ...adjEdges);
     }
   }
+}
+
+function genRandomTriangle(hypCanvas) {
+  const radius = hypCanvas.radius
+  const vertices = [];
+  do {
+    let re;
+    let im;
+    do {
+      re = 2 * Math.random() - 1;
+      im = 2 * Math.random() - 1;
+    } while (re**2 + im**2 > 1)
+    vertices.push(new Point(re * radius, im * radius));
+  } while (vertices.length < 3)
+
+  const [a, b, c] = vertices;
+  const edges = [
+    new Line(hypCanvas, a, b),
+    new Line(hypCanvas, b, c),
+    new Line(hypCanvas, c, a),
+  ]
+  edges.map(line => line.segment = true);
+  
+  return new Polygon(hypCanvas, ...edges);
+
 }
 
 export { HypCanvas, Point, Line, Polygon, Mobius }
