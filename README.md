@@ -7,7 +7,9 @@ I used W3 schools tooltips page for the toolbar as well: https://www.w3schools.c
 
 bugs to fix:
 
-- polygons sometimes fill incorrectly, but it's hard to reproduce. It seems that triangles fill fine, but more than three vertices is weird. Update: it looks like having obtuse angles is the issue... or maybe not, jeez. I think it's an orientation thing?
+- polygons fill incorrectly at first/last edge. It's hard to tell exactly how it happens, but I believe a path is not being closed properly when ctx.fill() is called.
+
+To do:
 
 Next steps:
 

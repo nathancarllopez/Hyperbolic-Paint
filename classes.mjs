@@ -1,3 +1,90 @@
+class HypCanvas {
+  constructor(canvas, bdryPadding, oldCanvas) {
+    // Get the canvas width
+    this.canvas = canvas;
+    this.width = canvas.width;
+
+    // Compute offsets
+    const boundRect = canvas.getBoundingClientRect();
+    this.offsetX = boundRect.left + this.width/2;
+    this.offsetY = boundRect.top + this.width/2;
+
+    // Compute radius
+    this.bdryPadding = bdryPadding;
+    this.radius = this.width/2 - bdryPadding;
+
+    // Create the context and change the coord system
+    this.ctx = canvas.getContext('2d');
+    this.ctx.translate(this.width/2, this.width/2);
+    this.ctx.scale(1, -1);
+
+    // Set this properties to oldCanvas properties
+    if (oldCanvas instanceof HypCanvas) {
+      // Store the toolbar info
+      this.activeTool = oldCanvas.activeTool;
+      this.activeTransform = oldCanvas.activeTransform;
+      this.colorType = oldCanvas.colorType;
+      this.strokeStyle = oldCanvas.strokeStyle;
+      this.fillStyle = oldCanvas.fillStyle;
+      this.lineWidth = oldCanvas.lineWidth;
+      this.anchorSize = oldCanvas.anchorSize;
+
+      // Initialize shapes and cursor
+      this.shapes = oldCanvas.shapes;
+      this.shapeHistory = oldCanvas.shapeHistory;
+      this.cursor = oldCanvas.cursor;
+
+      // Drawing variables
+      this.selected = oldCanvas.selected;
+      this.dragging = oldCanvas.dragging;
+      this.shapesMoved = oldCanvas.shapesMoved;
+      this.startX = oldCanvas.startX;
+      this.startY = oldCanvas.startY;
+
+      // Animation variables
+      // TO DO
+    }
+
+    // Set this properties to default value
+    else {
+      // Store the toolbar info
+      this.activeTool = 'clickDrag';
+      this.activeTransform = 'rotate';
+      this.colorType = 'stroke';
+      this.strokeStyle = 'black';
+      this.fillStyle = 'white';
+      this.lineWidth = 3;
+      this.anchorSize = 5;
+
+      // Initialize shapes and cursor
+      // const HALF = new Point(0.5 * this.radius, 0);
+      // const HALFI = new Point(0, 0.5 * this.radius);
+      // const LINE0 = new Line(this, HALF, HALFI)
+
+      this.shapes = {
+        clickedPoints: [],
+        lines: [],
+        // lines: [
+        //   LINE0
+        // ],
+        polygons: [],
+      };
+      this.shapeHistory = [];
+      this.cursor = { display: false};
+
+      // Drawing variables
+      this.selected = false;
+      this.dragging = false;
+      this. Moved = false;
+      this.startX = null;
+      this.startY = null;
+
+      // Animation variables
+      // TO DO
+    }
+  };
+}
+
 class Point {
   constructor(x, y) {
     // Drawing properties
@@ -41,11 +128,11 @@ class Point {
 
   static randPoint = () => new Point(Math.random(), Math.random());
   
-  draw(canvasInfo, drawAnchor = true) {
+  draw(hypCanvas, drawAnchor = true) {
     // Prepare the label
-    const ctx = canvasInfo.ctx;
-    const xLabel = Math.round(100 * (this.x/canvasInfo.radius))/100;
-    const yLabel = Math.round(100 * (this.y/canvasInfo.radius))/100;
+    const ctx = hypCanvas.ctx;
+    const xLabel = Math.round(100 * (this.x/hypCanvas.radius))/100;
+    const yLabel = Math.round(100 * (this.y/hypCanvas.radius))/100;
     // const xLabel = Math.round(100 * (this.x))/100;
     // const yLabel = Math.round(100 * (this.y))/100;
     const label = `(${xLabel}, ${yLabel})`;
@@ -88,14 +175,14 @@ class Point {
     return false;
   }
 
-  getDiameterEndpoints(canvasInfo) {
+  getDiameterEndpoints(hypCanvas) {
     // Reject when this is zero
     if (this.isZero()) {
       throw "No unique diameter through zero"
     }
 
     // Normalize so length = canvas radius
-    const normThis = this.scale(canvasInfo.radius/this.modulus);
+    const normThis = this.scale(hypCanvas.radius/this.modulus);
     const oppNormThis = normThis.scale(-1);
 
     // Return endpoints in order of increasing argument
@@ -149,31 +236,38 @@ class Point {
   }
   //#endregion
 
+  // Hyperbolic geometry
+  //#region
+  hypDist(that) {
+
+  }
+  //#endregion
+  
   toString() {
     return `(${this.x}, ${this.y})`;
   }
 }
 
 class Line {
-  constructor(canvasInfo, point1, point2) {
+  constructor(hypCanvas, point1, point2) {
     // Reject when the two points are the same
     if (point1.isEqualTo(point2)) {
       throw "We need two points to determine a line";
     }
 
     // Drawing properties
-    this.canvasInfo = canvasInfo;
+    this.hypCanvas = hypCanvas;
     this.selected = false;
-    this.strokeStyle = this.canvasInfo.strokeStyle
-    this.lineWidth = this.canvasInfo.lineWidth;
-    this.segment = this.canvasInfo.activeTool === 'segment' || this.canvasInfo.activeTool === 'polygon';
+    this.strokeStyle = this.hypCanvas.strokeStyle
+    this.lineWidth = this.hypCanvas.lineWidth;
+    this.segment = this.hypCanvas.activeTool === 'segment' || this.hypCanvas.activeTool === 'polygon';
 
     // If one of the points is zero, return a diameter through the other
     if (point1.isZero() || point2.isZero()) {
       this.diameter = true;
       const diameterEndpoints = point1.isZero() ?
-        point2.getDiameterEndpoints(canvasInfo) :
-        point1.getDiameterEndpoints(canvasInfo);
+        point2.getDiameterEndpoints(hypCanvas) :
+        point1.getDiameterEndpoints(hypCanvas);
       this.endpoint1 = diameterEndpoints[0];
       this.endpoint2 = diameterEndpoints[1];
       if (point1.isZero()) {
@@ -184,7 +278,7 @@ class Line {
         this.anchor2 = point1;
       }
       this.anchors = [this.anchor1, this.anchor2];
-      this.anchors.forEach(anchor => anchor.anchorSize = canvasInfo.anchorSize);
+      this.anchors.forEach(anchor => anchor.anchorSize = hypCanvas.anchorSize);
     }
     
     // If the points have the same argument (mod pi), return a diameter through either
@@ -192,7 +286,7 @@ class Line {
       point1.isOnADiameterWith(point2, 0.01)
     ) {
       this.diameter = true;
-      const diameterEndpoints = point1.getDiameterEndpoints(canvasInfo);
+      const diameterEndpoints = point1.getDiameterEndpoints(hypCanvas);
       this.endpoint1 = diameterEndpoints[0];
       this.endpoint2 = diameterEndpoints[1];
       if (point1.modulus < point2.modulus) {
@@ -203,7 +297,7 @@ class Line {
         this.anchor2 = point1;
       }
       this.anchors = [this.anchor1, this.anchor2];
-      this.anchors.forEach(anchor => anchor.anchorSize = canvasInfo.anchorSize);
+      this.anchors.forEach(anchor => anchor.anchorSize = hypCanvas.anchorSize);
     }
 
     // General case
@@ -211,7 +305,7 @@ class Line {
       this.diameter = false;
 
       // Scale input points so they lie in the unit disk
-      const canvasRadius = canvasInfo.radius;
+      const canvasRadius = hypCanvas.radius;
       const p = new Point(point1.x/canvasRadius, point1.y/canvasRadius);
       const q = new Point(point2.x/canvasRadius, point2.y/canvasRadius);
 
@@ -231,7 +325,7 @@ class Line {
         this.anchor2 = point1;
       }
       this.anchors = [this.anchor1, this.anchor2];
-      this.anchors.forEach(anchor => anchor.anchorSize = canvasInfo.anchorSize);
+      this.anchors.forEach(anchor => anchor.anchorSize = hypCanvas.anchorSize);
 
       // Determine whether to draw line counterclockwise and the anchor angles (relative to the line center)
       this.counterclockwise = !(this.anchor2.argument > this.anchor1.argument + Math.PI);
@@ -255,10 +349,10 @@ class Line {
     const anchorSize = anchor1.anchorSize;
 
     // Create a new line with the adjusted anchors
-    const adjustedLine = new Line(this.canvasInfo, ...adjustedAnchors);
+    const adjustedLine = new Line(this.hypCanvas, ...adjustedAnchors);
 
     // Update the adjustedLine with the drawing properties of this
-    adjustedLine.canvasInfo = this.canvasInfo
+    adjustedLine.hypCanvas = this.hypCanvas
     adjustedLine.selected = this.selected;
     adjustedLine.lineWidth = this.lineWidth;
     adjustedLine.strokeStyle = this.strokeStyle;
@@ -268,12 +362,12 @@ class Line {
     return adjustedLine;
   }
 
-  draw(canvasInfo) {
+  draw(hypCanvas) {
     // Draw the anchors
-    this.anchors.forEach(anchor => anchor.draw(canvasInfo));
+    this.anchors.forEach(anchor => anchor.draw(hypCanvas));
 
     // Draw the line
-    const ctx = canvasInfo.ctx;
+    const ctx = hypCanvas.ctx;
     ctx.beginPath();
     ctx.strokeStyle = this.strokeStyle;
     ctx.lineWidth = this.lineWidth;
@@ -299,42 +393,78 @@ class Line {
 }
 
 class Polygon {
-  constructor(canvasInfo, ...edges) {
+  constructor(hypCanvas, ...edges) {
     // Reject if less than 3 edges are given
     if (edges.length < 3) {
       throw "We need at least three points to determine a polygon";
     }
 
     // Drawing properties
-    this.canvasInfo = canvasInfo;
+    this.hypCanvas = hypCanvas;
     this.selected = false;
-    this.fillStyle = this.canvasInfo.fillStyle;
+    this.fillStyle = this.hypCanvas.fillStyle;
 
     // Record the edges
     this.edges = edges;
   }
 
-  draw(canvasInfo, fill = true) {
+  draw(hypCanvas, fill = true) {
     // Fill the interior
     if (fill) {
-      const ctx = canvasInfo.ctx;
-      ctx.beginPath();
+      // Initialize the context
+      const ctx = hypCanvas.ctx;
       ctx.fillStyle = this.fillStyle;
-      const firstVertex = this.edges[0].anchor1;
-      ctx.moveTo(firstVertex.x, firstVertex.y);
-      for (const edge of this.edges) { // We may need to figure out how to traverse the edges clockwise
-        if (edge.diameter) {
-          ctx.lineTo(edge.anchor2.x, edge.anchor2.y);
+
+      // Get the first two vertices
+      const originalVertex = this.edges[0].anchor1;
+      let startVertex = originalVertex;
+      let endVertex;
+
+      // Start drawing
+      ctx.beginPath();
+      ctx.moveTo(startVertex.x, startVertex.y);
+      for (const edge of this.edges) {
+        // Determine which direction to draw
+        let drawBackward = false;
+        if (edge.anchor1.isEqualTo(startVertex)) {
+          endVertex = edge.anchor2;
         } else {
-          ctx.arc(edge.center.x, edge.center.y, edge.radius, edge.anchor1Arg, edge.anchor2Arg, edge.counterclockwise);
+          drawBackward = true;
+          startVertex = edge.anchor2;
+          endVertex = edge.anchor1;
         }
+
+        // Draw along the edge
+        if (edge.diameter) {
+          ctx.lineTo(endVertex.x, endVertex.y);
+        } else if (drawBackward) {
+          ctx.arc(
+            edge.center.x,
+            edge.center.y,
+            edge.radius,
+            edge.anchor2Arg,
+            edge.anchor1Arg,
+            !edge.counterclockwise
+          );
+        } else {
+          ctx.arc(
+            edge.center.x,
+            edge.center.y,
+            edge.radius,
+            edge.anchor1Arg,
+            edge.anchor2Arg,
+            edge.counterclockwise
+          );
+        }
+        // Reset start vertex
+        startVertex = endVertex;
       }
-      // ctx.moveTo(firstVertex.x, firstVertex.y);
+      ctx.moveTo(originalVertex.x, originalVertex.y);
       ctx.fill();
     }
 
     // Draw the edges
-    this.edges.forEach(edge => edge.draw(canvasInfo));
+    this.edges.forEach(edge => edge.draw(hypCanvas));
   }
 
   recalculatePosition(changeX, changeY) {
@@ -354,10 +484,10 @@ class Polygon {
     }
 
     // Create a new polygon with the adjusted vertices
-    const adjustedPolygon = new Polygon(this.canvasInfo, ...edgesCopy);
+    const adjustedPolygon = new Polygon(this.hypCanvas, ...edgesCopy);
 
     // Update the adjusted polygons drawing properties to match this
-    adjustedPolygon.canvasInfo = this.canvasInfo;
+    adjustedPolygon.hypCanvas = this.hypCanvas;
     adjustedPolygon.selected = this.selected;
     adjustedPolygon.fillStyle = this.fillStyle;
 
@@ -365,4 +495,89 @@ class Polygon {
   }
 }
 
-export { Point, Line, Polygon }
+class Mobius {
+  /** Will be of the form z \mapsto (az + b)/(cz + d) */
+  constructor(a, b, c, d) {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+    this.d = d;
+  }
+
+  static IDENTITY = new Mobius(
+    new Point(1, 0),
+    new Point(0, 0),
+    new Point(0, 0),
+    new Point(1, 0)
+  );
+  static ROTATE(center, theta) {
+    const a = new Point(Math.cos(theta), Math.sin(theta));
+    const b = (a.times(center)).scale(-1);
+    const c = center.conjugate().scale(-1);
+    const d = new Point(1, 0);
+    return new Mobius(a, b, c, d);
+  }
+
+  applyTo(shape) {
+    // Points
+    if (shape instanceof Point) {
+      // Compute the numerator and denominator
+      const numerator = (this.a.times(shape)).plus(this.b);
+      const denominator = (this.c.times(shape)).plus(this.d);
+
+      return numerator.dividedBy(denominator);
+    }
+    
+    // Lines
+    else if (shape instanceof Line) {
+      // Apply the mobius transformation to the line anchors
+      const adjAnchors = shape.anchors.map(anchor => this.applyTo(anchor));
+
+      // Create a new line with the adjusted anchors
+      const adjLine = new Line(shape.hypCanvas, ...adjAnchors);
+
+      return adjLine;
+    }
+    // else if (shape instanceof Line) {
+    //   // Get the first line anchor
+    //   let anchor = shape.anchor1;
+
+    //   // Move the first anchor and record the movement
+    //   let adjAnchor = this.applyTo(anchor);
+    //   let changeX = adjAnchor.x - anchor.x;
+    //   let changeY = adjAnchor.y - anchor.y;
+
+    //   // Make the first anchor selected and recalculate the line's position
+    //   anchor.selected = true;
+    //   const firstAdj = shape.recalculatePosition(changeX, changeY);
+
+    //   // Get the unadjusted anchor and unselect both anchors
+    //   anchor = firstAdj.anchors.find(anchor => !anchor.selected);
+    //   firstAdj.anchors.forEach(anchor => anchor.selected = false);
+
+    //   // Move the second anchor and record the movement
+    //   adjAnchor = this.applyTo(anchor);
+    //   changeX = adjAnchor.x - anchor.x;
+    //   changeY = adjAnchor.y - anchor.y;
+
+    //   // Make the second anchor selected and recalculate the line's position
+    //   anchor.selected = true;
+    //   const secondAdj = firstAdj.recalculatePosition(changeX, changeY);
+
+    //   // Unselect both anchors
+    //   secondAdj.anchors.forEach(anchor => anchor.selected = false);
+
+    //   return secondAdj;
+    // }
+
+    // Polygons
+    else if (shape instanceof Polygon) {
+      // Apply the mobius transformation to each of the edges
+      const adjEdges = this.edges.map(edge => this.applyTo(edge));
+
+      return new Polygon(shape.hypCanvas, ...adjEdges);
+    }
+  }
+}
+
+export { HypCanvas, Point, Line, Polygon, Mobius }

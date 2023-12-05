@@ -1,16 +1,16 @@
-function getCanvasCoord(e, canvasInfo) {
+function getCanvasCoord(e, hypCanvas) {
   return [
-    e.clientX - canvasInfo.offsetX,
-    -(e.clientY - canvasInfo.offsetY)
+    e.clientX - hypCanvas.offsetX,
+    -(e.clientY - hypCanvas.offsetY)
   ];
 }
 
-function unselectAllShapes(shapes) {
+function unselectAllShapes(hypCanvas) {
   // Clear out selected shapes array
-  shapes.selected = false;
+  hypCanvas.selected = false;
 
   // Reset lines selected property
-  for (const line of shapes.lines) {
+  for (const line of hypCanvas.shapes.lines) {
     line.selected = false;
     for (const anchor of line.anchors) {
       anchor.selected = false;
@@ -19,7 +19,7 @@ function unselectAllShapes(shapes) {
   }
 
   // Reset polygons selected property
-  for (const polygon of shapes.polygons) {
+  for (const polygon of hypCanvas.shapes.polygons) {
     polygon.selected = false;
     for (const edge of polygon.edges) {
       edge.selected = false;
@@ -81,7 +81,6 @@ function deepCopyShapes(shapes) {
     lines: [],
     polygons: [],
     clickedPoints: [],
-    selected: shapes.selected
   };
 
   // Copy the lines
@@ -102,4 +101,63 @@ function deepCopyShapes(shapes) {
   return deepCopy;
 }
 
-export { getCanvasCoord, unselectAllShapes, adjustDraggingShapes, deepCopyShapes }
+function getRadioButtonValue(name) {
+  // Get all radio buttons with name
+  const radioButtons = document.getElementsByName(name);
+
+  // Return the value of the checked button
+  for (const button of radioButtons) {
+    if (button.checked) {
+      return button.value;
+    }
+  }
+}
+
+function removeBorder(allColorButtons) {
+  for (const button of allColorButtons) {
+    if (button.style.border) {
+      button.style.removeProperty('border');
+      break;
+    }
+  }
+}
+
+function resetToolBar(hypCanvas) {
+  // Reset line width
+  const lineWidth = hypCanvas.lineWidth
+  const lineWidthRange = document.querySelector('#width');
+  lineWidthRange.value = lineWidth
+
+  // Remove the border from all the color buttons
+  const allColorButtons = Array.from(document.querySelectorAll('.color-button'));
+  removeBorder(allColorButtons);
+
+  // Reset color
+  const canvasColor = hypCanvas.colorType === 'stroke' ?
+    hypCanvas.strokeStyle :
+    hypCanvas.fillStyle;
+  let colorButtonFound = false;
+  const colorPickerDiv = allColorButtons.pop()
+  for (const button of allColorButtons) {
+    if (button.style.background === canvasColor) {
+      colorButtonFound = true;
+      button.style.border = '2px solid gray';
+    }
+  }
+  if (!colorButtonFound) {
+    const colorPicker = document.querySelector('.color-input');
+    colorPicker.value = canvasColor;
+    colorPickerDiv.style.background = canvasColor;
+    colorPickerDiv.style.border = '2px solid gray';
+  }
+}
+
+export {
+  getCanvasCoord,
+  unselectAllShapes,
+  adjustDraggingShapes,
+  deepCopyShapes,
+  getRadioButtonValue,
+  removeBorder,
+  resetToolBar
+}

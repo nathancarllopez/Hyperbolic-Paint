@@ -5,130 +5,237 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hyperbolic Paint</title>
   <link href="styles.css" type="text/css" rel="stylesheet">
-  
 </head>
 <body>
-  <div>
-    <!-- Header -->
-    <h1>Hyperbolic Paint</h1>
 
-    <!-- Intro text -->
-    <p>In the <a href="https://en.wikipedia.org/wiki/Poincar%C3%A9_disk_model">Poincare Disk Model</a> of Hyperbolic space, the plane is represented by the interior of the unit disk in the complex plane and <a href="https://en.wikipedia.org/wiki/Geodesic">straight lines</a> correspond to circular arcs that meet the boundary of the unit disk at right angles.</p>
+  <!-- -------------- -->
+  <!-- MAIN CONTAINER -->
+  <!-- -------------- -->
+  <div class="main-container">
 
-    <!-- Canvas -->
-    <canvas width="600" height="600"></canvas>
+    <!-- -------------- -->
+    <!-- LEFT CONTAINER -->
+    <!-- -------------- -->
+    <div class="left-container container">
 
-    <!-- Link to github -->
-    <p>See the source code for this project: <a href="https://github.com/nathancarllopez/Hyperbolic-Paint">github</a></p>
-  </div>
+      <!-- HEADER -->
+      <h1>Hyperbolic Paint</h1>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <!-- Select or draw tools -->
-    <div class="tools">
-      <p class="toolbar-instructions">Drawing Tools</p>
-      <input type="radio" id="clickDrag" name="tools" value="clickDrag" checked>
-      <label for="clickDrag">
-        <div class="tooltip">
-          Click and Drag
-          <span class="tooltiptext">
-            Select or drag a shape by clicking one of its anchors.
-          </span>
-        </div>
-      </label><br>
-      <input type="radio" id="line" name="tools" value="line">
-      <label for="line">
-        <div class="tooltip">
-          Draw Full Line
-          <span class="tooltiptext">
-            Click two points to draw a line.
-          </span>
-        </div>
-      </label><br>
-      <input type="radio" id="segment" name="tools" value="segment">
-      <label for="segment">
-        <div class="tooltip">
-          Draw Line Segment
-          <span class="tooltiptext">
-            Click two points to draw a line segment.
-          </span>
-        </div>
-      </label><br>
-      <input type="radio" id="polygon" name="tools" value="polygon">
-      <label for="polygon">
-        <div class="tooltip">
-          Draw Polygon
-          <span class="tooltiptext">
-            Hold shift while clicking to place the last point.
-          </span>
-        </div>
-      </label><br>
-    </div>
+      <!-- INTRO TEXT -->
+      <div class="intro-text">
+        <p>In the <a href="https://en.wikipedia.org/wiki/Poincar%C3%A9_disk_model">
+          Poincare Disk Model</a> of Hyperbolic space, the plane is represented by
+          the interior of the unit disk in the complex plane and
+          <a href="https://en.wikipedia.org/wiki/Geodesic">straight lines</a>
+          correspond to circular arcs that meet the boundary of the unit disk
+          at right angles.</p>
 
-    <!-- Colors -->
-    <div class="colors">
-      <!-- Stroke or fill selector -->
-      <p class="toolbar-instructions">
-        <div class="tooltip">
-          Color Options
-          <span class="tooltiptext">
-            Change the colors of a selected shape or the pen.
-          </span>
-        </div>
-      </p>
-      <input type="radio" id="stroke" name="color-type" value="stroke" checked>
-      <label for="stroke">
-        <div class="tooltip">
-          Stroke Color
-          <span class="tooltiptext">
-            The color of lines or the boundaries of polygons
-          </span>
-        </div>
-      </label><br>
-      <input type="radio" id="fill" name="color-type" value="fill">
-      <label for="fill">
-        <div class="tooltip">
-          Fill Color
-          <span class="tooltiptext">
-            The interior color of a polygon
-          </span>
-        </div>
-      </label>
+        <br>
 
-      <!-- Color buttons -->
-      <div class="color-buttons">
-        <!-- Default colors -->
-        <div class="default-color" style="background: black;"></div>
-        <div class="default-color" style="background: red;"></div>
-        <div class="default-color" style="background: blue;"></div>
-        <div class="default-color" style="background: green;"></div>
-        <div class="default-color" style="background: white;"></div>
+        <p>Use this tool to explore the Disk Model by drawing lines and polygons. Drag
+          the shapes you create using their anchor points, and style them using the
+          inputs on the right side of the screen. (COMING SOON: Use the transformation
+          buttons to rotate and translate the plane to see the effect on your shapes!)</p>
+      </div>
+      
+
+      <!-- GITHUB LINK -->
+      <div class="github">
+        <p>See the source code for this project:
+          <a href="https://github.com/nathancarllopez/Hyperbolic-Paint">github</a></p>
       </div>
 
     </div>
 
-    <!-- Line weight -->
-    <div class="sizes">
-      <p class="toolbar-instructions">Shape Options</p>
-      <input type="range" min="1" max="10" class="line-width" id="line-width" value="3">
-      <label for="line-width">
-        <div class="tooltip">
-          Stroke Width
-          <span class="tooltiptext">
-            The size of lines.
-          </span>
+    <!-- ---------------- -->
+    <!-- MIDDLE CONTAINER -->
+    <!-- ---------------- -->
+    <div class="middle-container container">
+  
+      <!-- CANVAS -->
+      <canvas></canvas>
+  
+    </div>
+    
+    <!-- --------------- -->
+    <!-- RIGHT CONTAINER -->
+    <!-- --------------- -->
+    <div class="right-container container">
+
+      <!-- DRAWING TOOLS -->
+      <div>
+        <h3>Drawing Tools</h3>
+    
+        <!-- CLICK AND DRAG -->
+        <input type="radio" id="clickDrag" name="tools" value="clickDrag" checked>
+        <label for="clickDrag"></label><br>
+
+        <!-- DRAW WHOLE LINE -->
+        <input type="radio" id="line" name="tools" value="line">
+        <label for="line"></label><br>
+        
+        <!-- DRAW LINE SEGMENT -->
+        <input type="radio" id="segment" name="tools" value="segment">
+        <label for="segment"></label><br>
+
+        <!-- DRAW POLYGONS -->
+        <input type="radio" id="polygon" name="tools" value="polygon">
+        <label for="polygon"></label><br>
+      </div>  
+
+      <!-- TRANSFORMATIONS -->
+      <div>
+        <h3>Transformations</h3>
+  
+        <!-- ROTATIONS -->
+        <input type="radio" id="rotate" name="transforms" value="rotate" checked>
+        <label for="rotate"></label><br>
+      </div>
+
+      <!-- COLOR SELECTOR -->
+      <div>
+        <h3>Color Selector</h3>
+
+        <!-- STROKE OPTION -->
+        <input type="radio" id="stroke" name="color-type" value="stroke" checked>
+        <label for="stroke"></label><br>
+
+        <!-- FILL OPTION -->
+        <input type="radio" id="fill" name="color-type" value="fill">
+        <label for="fill"></label><br>
+      </div>
+
+      <!-- COLOR BUTTONS -->
+      <div>
+        <!-- FIRST ROW -->
+        <div>
+          <div class="color-button" style="background: black; border: 2px solid gray"></div>
+          <div class="color-button" style="background: red;"></div>
+          <div class="color-button" style="background: blue;"></div>
+          <div class="color-button" style="background: purple;"></div>
         </div>
-      </label><br>
+
+        <!-- SECOND ROW -->
+        <div>
+          <div class="color-button" style="background: green;"></div>
+          <div class="color-button" style="background: orange;"></div>
+          <div class="color-button" style="background: white;"></div>
+          <input class="color-input" type="color">
+          <div class="color-button" id="colorPickerDiv"></div>
+        </div>
+      </div>
+      
+      <!-- SHAPE OPTIONS -->
+      <div>
+        <h3>Shape Options</h3>
+
+        <!-- LINE WIDTH -->
+        <input type="range" min="1" max="10" value="3" class="width" id="width">
+        <label for="width"></label><br>
+      </div>
+
+      <!-- UNDO, DELETE, CLEAR -->
+      <div>
+        <button id="undo" type="button" class="button">Undo</button>
+        <button id="delete" type="button" class="button">Delete</button>
+        <button id="clear" type="button" class="button">Clear All</button>
+      </div>
+
     </div>
 
-    <!-- Undo and clear -->
-    <div class="action-buttons">
-      <button id="undo" type="button" class="button">Undo</button>
-      <button id="clear" type="button" class="button">Clear All</button>
-    </div>
   </div>
 
-  <!-- Scripts -->
-  <script type="module" src="main.mjs"></script>
+  <!-- LOAD TOOL TIPS -->
+  <script>
+    /**
+     * This script adds tooltip text to parts of the toolbar
+     */
+    const ALL_TOOLTIP_TEXT = {
+      clickDrag: {
+        p: "Click and Drag",
+        span: "Select or drag a shape by clicking one of its anchors."},
+      line: {
+        p: "Draw Full Line",
+        span: "Click two points to draw a line."},
+      segment: {
+        p: "Draw Line Segment",
+        span: "Click two points to draw a line segment"},
+      polygon: {
+        p: "Draw Polygon",
+        span: "Hold shift while clicking to place the last point"},
+      rotate: {
+        p: "Choose Center\nof Rotation",
+        span: "(COMING SOON!) Click a point to rotate around"},
+      stroke: {
+        p: "Stroke Color",
+        span: "The color of lines or the boundaries of polygons."},
+      fill: {
+        p: "Fill Color",
+        span: "The color of the interiors of polygons."},
+      width: {
+        p: "Stroke Width",
+        span: "The thickness of lines and the boundaries of polygons."},
+    }
+
+    document.querySelectorAll('label').forEach(label => {
+      if (Object(ALL_TOOLTIP_TEXT).hasOwnProperty(label.htmlFor)) {
+        addToolTip(label);
+      };
+    });
+
+    function addToolTip(element) {
+      // Create div, p, and span elements
+      const tooltipDiv = document.createElement('div');
+      const elementTextP = document.createElement('p');
+      const tooltipTextSpan = document.createElement('span');
+
+      // Add text content to elements
+      if (element.htmlFor) {
+        elementTextP.textContent = ALL_TOOLTIP_TEXT[element.htmlFor].p;
+        tooltipTextSpan.textContent = ALL_TOOLTIP_TEXT[element.htmlFor].span;
+      }
+
+      // Add class names to elements
+      tooltipDiv.classList.add('tooltip');
+      tooltipTextSpan.classList.add('tooltiptext');
+
+      // Organize parent-child hierarchy
+      tooltipDiv.appendChild(elementTextP);
+      tooltipDiv.appendChild(tooltipTextSpan);
+      element.appendChild(tooltipDiv);
+    }
+  </script>
+  
+  <!-- RANDOMIZE COLOR PICKER -->
+  <script>
+    /**
+     * Here we choose a random starter color for the value of the
+     * color picker and add an event listener to change its
+     * background color to match the color selected whenever a 
+     * new input color is input
+     */
+    const colorPicker = document.querySelector('.color-input');
+    const colorPickerDiv = document.querySelector('#colorPickerDiv')
+    const startColor = getRandomColor();
+    colorPickerDiv.style.backgroundColor = startColor;
+    colorPicker.value = startColor;
+
+    colorPicker.addEventListener('input', e => {
+      const inputColor = e.target.value;
+      colorPickerDiv.style.backgroundColor = inputColor;
+    })
+
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+  </script>
+
+  <!-- EVENT LISTENERS AND DRAWING FUNCTIONALITY -->
+  <script type="module" src="./startUpFunctions.mjs"></script>
 </body>
 </html>
