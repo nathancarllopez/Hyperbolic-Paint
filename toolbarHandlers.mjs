@@ -126,7 +126,7 @@ function selectMove(e, hypCanvas) {
 
     // Otherwise, reset shapes and turn off dragging flag
     else {
-      unselectAllShapes(hypCanvas.shapes);
+      unselectAllShapes(hypCanvas);
       hypCanvas.dragging = false;
     }
 
