@@ -8,7 +8,6 @@ import { lineClick, polygonClick, selectDown, selectMove, selectUp } from "./too
  */
 let hypCanvas = createHypCanvas()
 attachDefaultEventListeners(hypCanvas);
-console.log(hypCanvas);
 
 /**
  * FUNCTIONS TO RUN AT STARTUP
