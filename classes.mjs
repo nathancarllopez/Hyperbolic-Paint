@@ -398,6 +398,35 @@ class Polygon {
 
     // Record the edges
     this.edges = edges;
+
+    // Orient the edges
+    this.orientations = [];
+    let startVertex = edges[0].anchor1;
+    let index = -1;
+    while (this.orientations.length < edges.length) {
+      // Increment index
+      index = (index + 1) % edges.length;
+      const edge = edges[index];
+
+      // Initialize an edge with an orientation
+      const orientedEdge = {
+        line: edge,
+        oriented: edge.counterclockwise
+      }
+
+      // Check if start vertex is equal to either anchor
+      if (edge.anchor1.isEqualTo(startVertex)) {
+        startVertex = edge.anchor2
+      } else if (edge.anchor2.isEqualTo(startVertex)) {
+        startVertex = edge.anchor1;
+        orientedEdge.oriented = !orientedEdge.oriented;
+      } else {
+        continue;
+      }
+
+      // Add the new edge with orientation
+      this.orientations.push(orientedEdge);
+    }
   }
 
   draw(hypCanvas, fill = true) {
@@ -407,57 +436,118 @@ class Polygon {
       const ctx = hypCanvas.ctx;
       ctx.fillStyle = this.fillStyle;
 
-      // Get the first two vertices
-      const originalVertex = this.edges[0].anchor1;
-      let startVertex = originalVertex;
-      let endVertex;
-
-      // Start drawing
+      // Trace the boundary using the oriented edges
+      // const firstVertex = this.orientations[0].line.anchor1
       ctx.beginPath();
-      ctx.moveTo(startVertex.x, startVertex.y);
-      for (const edge of this.edges) {
-        // Determine which direction to draw
-        let drawBackward = false;
-        if (edge.anchor1.isEqualTo(startVertex)) {
-          endVertex = edge.anchor2;
-        } else {
-          drawBackward = true;
-          startVertex = edge.anchor2;
-          endVertex = edge.anchor1;
+      // ctx.moveTo(firstVertex.x, firstVertex.y);
+      for (const orientedEdge of this.orientations) {
+        const edge = orientedEdge.line;
+
+        // If edge is correctly oriented
+        if (orientedEdge.oriented) {
+          // const edge = orientedEdge.line;
+          ctx.moveTo(edge.anchor1.x, edge.anchor1.y);
+
+          if (edge.diameter) {
+            ctx.lineTo(edge.anchor2.x, edge.anchor2.y);
+          } else {
+            ctx.arc(
+              edge.center.x,
+              edge.center.y,
+              edge.radius,
+              edge.anchor1Arg,
+              edge.anchor2Arg,
+              edge.counterclockwise
+            );
+          }
         }
 
-        // Draw along the edge
-        if (edge.diameter) {
-          ctx.lineTo(endVertex.x, endVertex.y);
-        } else if (drawBackward) {
-          ctx.arc(
-            edge.center.x,
-            edge.center.y,
-            edge.radius,
-            edge.anchor2Arg,
-            edge.anchor1Arg,
-            !edge.counterclockwise
-          );
-        } else {
-          ctx.arc(
-            edge.center.x,
-            edge.center.y,
-            edge.radius,
-            edge.anchor1Arg,
-            edge.anchor2Arg,
-            edge.counterclockwise
-          );
+        // Otherwise
+        else {
+          // const edge = orientedEdge.line;
+          ctx.moveTo(edge.anchor2.x, edge.anchor2.y);
+
+          if (edge.diameter) {
+            ctx.lineTo(edge.anchor1.x, edge.anchor1.y);
+          } else {
+            ctx.arc(
+              edge.center.x,
+              edge.center.y,
+              edge.radius,
+              edge.anchor2Arg,
+              edge.anchor1Arg,
+              !edge.counterclockwise
+            );
+          }
         }
-        // Reset start vertex
-        startVertex = endVertex;
       }
-      ctx.moveTo(originalVertex.x, originalVertex.y);
+      // ctx.moveTo(firstVertex.x, firstVertex.y);
       ctx.fill();
     }
 
     // Draw the edges
-    this.edges.forEach(edge => edge.draw(hypCanvas));
+    this.edges.forEach(edge => edge.draw(hypCanvas))
   }
+
+  // draw(hypCanvas, fill = true) {
+  //   // Fill the interior
+  //   if (fill) {
+  //     // Initialize the context
+  //     const ctx = hypCanvas.ctx;
+  //     ctx.fillStyle = this.fillStyle;
+
+  //     // Get the first two vertices
+  //     const originalVertex = this.edges[0].anchor1;
+  //     let startVertex = originalVertex;
+  //     let endVertex;
+
+  //     // Start drawing
+  //     ctx.beginPath();
+  //     ctx.moveTo(startVertex.x, startVertex.y);
+  //     for (const edge of this.edges) {
+  //       // Determine which direction to draw
+  //       let drawBackward = false;
+  //       if (edge.anchor1.isEqualTo(startVertex)) {
+  //         endVertex = edge.anchor2;
+  //       } else {
+  //         drawBackward = true;
+  //         startVertex = edge.anchor2;
+  //         ctx.moveTo(startVertex.x, startVertex.y);
+  //         endVertex = edge.anchor1;
+  //       }
+
+  //       // Draw along the edge
+  //       if (edge.diameter) {
+  //         ctx.lineTo(endVertex.x, endVertex.y);
+  //       } else if (drawBackward) {
+  //         ctx.arc(
+  //           edge.center.x,
+  //           edge.center.y,
+  //           edge.radius,
+  //           edge.anchor2Arg,
+  //           edge.anchor1Arg,
+  //           !edge.counterclockwise
+  //         );
+  //       } else {
+  //         ctx.arc(
+  //           edge.center.x,
+  //           edge.center.y,
+  //           edge.radius,
+  //           edge.anchor1Arg,
+  //           edge.anchor2Arg,
+  //           edge.counterclockwise
+  //         );
+  //       }
+  //       // Reset start vertex
+  //       startVertex = endVertex;
+  //     }
+  //     ctx.moveTo(originalVertex.x, originalVertex.y);
+  //     ctx.fill();
+  //   }
+
+  //   // Draw the edges
+  //   this.edges.forEach(edge => edge.draw(hypCanvas));
+  // }
 
   recalculatePosition(changeX, changeY) {
     // Adjust the selected edges
@@ -475,7 +565,7 @@ class Polygon {
       edgesCopy[index] = newEdges[index];
     }
 
-    // Create a new polygon with the adjusted vertices
+    // Create a new polygon with the adjusted edges
     const adjustedPolygon = new Polygon(this.hypCanvas, ...edgesCopy);
 
     // Update the adjusted polygons drawing properties to match this
