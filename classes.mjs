@@ -67,7 +67,7 @@ class HypCanvas {
       // Drawing variables
       this.selected = false;
       this.dragging = false;
-      this. Moved = false;
+      this.shapesMoved = false;
       this.startX = null;
       this.startY = null;
 
