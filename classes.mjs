@@ -60,6 +60,7 @@ class HypCanvas {
         clickedPoints: [],
         lines: [],
         polygons: [genRandomTriangle(this)],
+        // polygons: []
       };
       this.shapeHistory = [];
       this.cursor = { display: false};
@@ -67,7 +68,7 @@ class HypCanvas {
       // Drawing variables
       this.selected = false;
       this.dragging = false;
-      this. Moved = false;
+      this.shapesMoved = false;
       this.startX = null;
       this.startY = null;
 
@@ -396,36 +397,42 @@ class Polygon {
     this.selected = false;
     this.fillStyle = this.hypCanvas.fillStyle;
 
-    // Record the edges
+    // Record and copy the edges
     this.edges = edges;
+    const edgesCopy = edges.map(edge => edge.recalculatePosition(0, 0));
 
     // Orient the edges
-    this.orientations = [];
-    let startVertex = edges[0].anchor1;
-    let index = -1;
-    while (this.orientations.length < edges.length) {
-      // Increment index
-      index = (index + 1) % edges.length;
-      const edge = edges[index];
+    this.oEdges = [];
+    let currentEdge;
+    let currentVertex = edgesCopy[0].anchor1;
+    while (edgesCopy.length > 0) {
+      // Update the current edge
+      currentEdge = edgesCopy.shift();
 
-      // Initialize an edge with an orientation
-      const orientedEdge = {
-        line: edge,
-        oriented: edge.counterclockwise
+      // Initialize the new oriented edge
+      const oEdge = {
+        line: currentEdge,
+        oriented: null
       }
 
-      // Check if start vertex is equal to either anchor
-      if (edge.anchor1.isEqualTo(startVertex)) {
-        startVertex = edge.anchor2
-      } else if (edge.anchor2.isEqualTo(startVertex)) {
-        startVertex = edge.anchor1;
-        orientedEdge.oriented = !orientedEdge.oriented;
-      } else {
-        continue;
+      // If the current vertex is the first anchor
+      if (currentVertex.isEqualTo(currentEdge.anchor1)) {
+        oEdge.oriented = true;
+        currentVertex = currentEdge.anchor2;
+        this.oEdges.push(oEdge);
       }
 
-      // Add the new edge with orientation
-      this.orientations.push(orientedEdge);
+      // If the current vertex is the second anchor
+      else if (currentVertex.isEqualTo(currentEdge.anchor2)) {
+        oEdge.oriented = false;
+        currentVertex = currentEdge.anchor1;
+        this.oEdges.push(oEdge);
+      }
+
+      // If the current vertex is neither of the anchors
+      else {
+        edgesCopy.push(currentEdge);
+      }
     }
   }
 
@@ -437,17 +444,12 @@ class Polygon {
       ctx.fillStyle = this.fillStyle;
 
       // Trace the boundary using the oriented edges
-      // const firstVertex = this.orientations[0].line.anchor1
       ctx.beginPath();
-      // ctx.moveTo(firstVertex.x, firstVertex.y);
-      for (const orientedEdge of this.orientations) {
-        const edge = orientedEdge.line;
-
-        // If edge is correctly oriented
-        if (orientedEdge.oriented) {
-          // const edge = orientedEdge.line;
-          ctx.moveTo(edge.anchor1.x, edge.anchor1.y);
-
+      const firstAnchor = this.oEdges[0].line.anchor1
+      ctx.moveTo(firstAnchor.x, firstAnchor.y);
+      for (const oEdge of this.oEdges) {
+        const edge = oEdge.line;
+        if (oEdge.oriented) {
           if (edge.diameter) {
             ctx.lineTo(edge.anchor2.x, edge.anchor2.y);
           } else {
@@ -458,15 +460,9 @@ class Polygon {
               edge.anchor1Arg,
               edge.anchor2Arg,
               edge.counterclockwise
-            );
+            )
           }
-        }
-
-        // Otherwise
-        else {
-          // const edge = orientedEdge.line;
-          ctx.moveTo(edge.anchor2.x, edge.anchor2.y);
-
+        } else {
           if (edge.diameter) {
             ctx.lineTo(edge.anchor1.x, edge.anchor1.y);
           } else {
@@ -477,77 +473,16 @@ class Polygon {
               edge.anchor2Arg,
               edge.anchor1Arg,
               !edge.counterclockwise
-            );
+            )
           }
         }
       }
-      // ctx.moveTo(firstVertex.x, firstVertex.y);
       ctx.fill();
     }
 
     // Draw the edges
     this.edges.forEach(edge => edge.draw(hypCanvas))
   }
-
-  // draw(hypCanvas, fill = true) {
-  //   // Fill the interior
-  //   if (fill) {
-  //     // Initialize the context
-  //     const ctx = hypCanvas.ctx;
-  //     ctx.fillStyle = this.fillStyle;
-
-  //     // Get the first two vertices
-  //     const originalVertex = this.edges[0].anchor1;
-  //     let startVertex = originalVertex;
-  //     let endVertex;
-
-  //     // Start drawing
-  //     ctx.beginPath();
-  //     ctx.moveTo(startVertex.x, startVertex.y);
-  //     for (const edge of this.edges) {
-  //       // Determine which direction to draw
-  //       let drawBackward = false;
-  //       if (edge.anchor1.isEqualTo(startVertex)) {
-  //         endVertex = edge.anchor2;
-  //       } else {
-  //         drawBackward = true;
-  //         startVertex = edge.anchor2;
-  //         ctx.moveTo(startVertex.x, startVertex.y);
-  //         endVertex = edge.anchor1;
-  //       }
-
-  //       // Draw along the edge
-  //       if (edge.diameter) {
-  //         ctx.lineTo(endVertex.x, endVertex.y);
-  //       } else if (drawBackward) {
-  //         ctx.arc(
-  //           edge.center.x,
-  //           edge.center.y,
-  //           edge.radius,
-  //           edge.anchor2Arg,
-  //           edge.anchor1Arg,
-  //           !edge.counterclockwise
-  //         );
-  //       } else {
-  //         ctx.arc(
-  //           edge.center.x,
-  //           edge.center.y,
-  //           edge.radius,
-  //           edge.anchor1Arg,
-  //           edge.anchor2Arg,
-  //           edge.counterclockwise
-  //         );
-  //       }
-  //       // Reset start vertex
-  //       startVertex = endVertex;
-  //     }
-  //     ctx.moveTo(originalVertex.x, originalVertex.y);
-  //     ctx.fill();
-  //   }
-
-  //   // Draw the edges
-  //   this.edges.forEach(edge => edge.draw(hypCanvas));
-  // }
 
   recalculatePosition(changeX, changeY) {
     // Adjust the selected edges
