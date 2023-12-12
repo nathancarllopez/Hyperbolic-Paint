@@ -112,9 +112,7 @@ class Point {
     const adjustedPoint = new Point(this.x + changeX, this.y + changeY);
 
     // Update the drawing properties for the adjusted point
-    adjustedPoint.selected = this.selected;
-    adjustedPoint.fillStyle = this.fillStyle;
-    adjustedPoint.anchorSize = this.anchorSize;
+    adjustedPoint.copyDrawingProperties(this);
 
     return adjustedPoint;
   }
@@ -183,6 +181,12 @@ class Point {
       return [normThis, oppNormThis];
     }
     return [oppNormThis, normThis];
+  }
+
+  copyDrawingProperties(that) {
+    this.selected = that.selected;
+    this.fillStyle = that.fillStyle;
+    this.anchorSize = that.anchorSize;
   }
 
   // Equality
@@ -327,6 +331,14 @@ class Line {
     }
   }
 
+  copyDrawingProperties(that) {
+    this.hypCanvas = that.hypCanvas;
+    this.selected = that.selected;
+    this.strokeStyle = that.strokeStyle;
+    this.lineWidth = that.lineWidth;
+    this.segment = that.segment;
+  }
+
   recalculatePosition(changeX, changeY) {
     // Adjust the selected anchor
     const anchor1 = this.anchor1;
@@ -343,13 +355,7 @@ class Line {
 
     // Create a new line with the adjusted anchors
     const adjustedLine = new Line(this.hypCanvas, ...adjustedAnchors);
-
-    // Update the adjustedLine with the drawing properties of this
-    adjustedLine.hypCanvas = this.hypCanvas
-    adjustedLine.selected = this.selected;
-    adjustedLine.lineWidth = this.lineWidth;
-    adjustedLine.strokeStyle = this.strokeStyle;
-    adjustedLine.segment = this.segment
+    adjustedLine.copyDrawingProperties(this);
     adjustedLine.anchors.forEach(anchor => anchor.anchorSize = anchorSize);
 
     return adjustedLine;
@@ -484,6 +490,12 @@ class Polygon {
     this.edges.forEach(edge => edge.draw(hypCanvas))
   }
 
+  copyDrawingProperties(that) {
+    this.hypCanvas = that.hypCanvas;
+    this.selected = that.selected;
+    this.fillStyle = that.fillStyle;
+  }
+
   recalculatePosition(changeX, changeY) {
     // Adjust the selected edges
     const newEdges = {};
@@ -502,14 +514,34 @@ class Polygon {
 
     // Create a new polygon with the adjusted edges
     const adjustedPolygon = new Polygon(this.hypCanvas, ...edgesCopy);
-
-    // Update the adjusted polygons drawing properties to match this
-    adjustedPolygon.hypCanvas = this.hypCanvas;
-    adjustedPolygon.selected = this.selected;
-    adjustedPolygon.fillStyle = this.fillStyle;
+    adjustedPolygon.copyDrawingProperties(this);
 
     return adjustedPolygon;
   }
+}
+
+function genRandomTriangle(hypCanvas) {
+  const radius = hypCanvas.radius
+  const vertices = [];
+  do {
+    let re;
+    let im;
+    do {
+      re = 2 * Math.random() - 1;
+      im = 2 * Math.random() - 1;
+    } while (re**2 + im**2 > 1)
+    vertices.push(new Point(re * radius, im * radius));
+  } while (vertices.length < 3)
+
+  const [a, b, c] = vertices;
+  const edges = [
+    new Line(hypCanvas, a, b),
+    new Line(hypCanvas, b, c),
+    new Line(hypCanvas, c, a),
+  ]
+  edges.map(line => line.segment = true);
+  
+  return new Polygon(hypCanvas, ...edges);
 }
 
 class Mobius {
@@ -542,7 +574,11 @@ class Mobius {
       const numerator = (this.a.times(shape)).plus(this.b);
       const denominator = (this.c.times(shape)).plus(this.d);
 
-      return numerator.dividedBy(denominator);
+      // Compute the final answer and copy it's drawing properties
+      const adjPoint = numerator.dividedBy(denominator);
+      adjPoint.copyDrawingProperties(shape)
+
+      return adjPoint;
     }
     
     // Lines
@@ -552,74 +588,23 @@ class Mobius {
 
       // Create a new line with the adjusted anchors
       const adjLine = new Line(shape.hypCanvas, ...adjAnchors);
+      adjLine.copyDrawingProperties(shape);
 
       return adjLine;
     }
-    // else if (shape instanceof Line) {
-    //   // Get the first line anchor
-    //   let anchor = shape.anchor1;
-
-    //   // Move the first anchor and record the movement
-    //   let adjAnchor = this.applyTo(anchor);
-    //   let changeX = adjAnchor.x - anchor.x;
-    //   let changeY = adjAnchor.y - anchor.y;
-
-    //   // Make the first anchor selected and recalculate the line's position
-    //   anchor.selected = true;
-    //   const firstAdj = shape.recalculatePosition(changeX, changeY);
-
-    //   // Get the unadjusted anchor and unselect both anchors
-    //   anchor = firstAdj.anchors.find(anchor => !anchor.selected);
-    //   firstAdj.anchors.forEach(anchor => anchor.selected = false);
-
-    //   // Move the second anchor and record the movement
-    //   adjAnchor = this.applyTo(anchor);
-    //   changeX = adjAnchor.x - anchor.x;
-    //   changeY = adjAnchor.y - anchor.y;
-
-    //   // Make the second anchor selected and recalculate the line's position
-    //   anchor.selected = true;
-    //   const secondAdj = firstAdj.recalculatePosition(changeX, changeY);
-
-    //   // Unselect both anchors
-    //   secondAdj.anchors.forEach(anchor => anchor.selected = false);
-
-    //   return secondAdj;
-    // }
 
     // Polygons
     else if (shape instanceof Polygon) {
       // Apply the mobius transformation to each of the edges
       const adjEdges = this.edges.map(edge => this.applyTo(edge));
 
+      // Create a new polygon with the adjusted edges
+      const adjPoly = new Polygon(shape.hypCanvas, ...adjEdges);
+      adjPoly.copyDrawingProperties(shape);
+
       return new Polygon(shape.hypCanvas, ...adjEdges);
     }
   }
-}
-
-function genRandomTriangle(hypCanvas) {
-  const radius = hypCanvas.radius
-  const vertices = [];
-  do {
-    let re;
-    let im;
-    do {
-      re = 2 * Math.random() - 1;
-      im = 2 * Math.random() - 1;
-    } while (re**2 + im**2 > 1)
-    vertices.push(new Point(re * radius, im * radius));
-  } while (vertices.length < 3)
-
-  const [a, b, c] = vertices;
-  const edges = [
-    new Line(hypCanvas, a, b),
-    new Line(hypCanvas, b, c),
-    new Line(hypCanvas, c, a),
-  ]
-  edges.map(line => line.segment = true);
-  
-  return new Polygon(hypCanvas, ...edges);
-
 }
 
 export { HypCanvas, Point, Line, Polygon, Mobius }
