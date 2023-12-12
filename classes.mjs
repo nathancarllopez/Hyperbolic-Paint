@@ -436,7 +436,7 @@ class Polygon {
     }
   }
 
-  draw(hypCanvas, fill = false) {
+  draw(hypCanvas, fill = true) {
     // Fill the interior
     if (fill) {
       // Initialize the context
