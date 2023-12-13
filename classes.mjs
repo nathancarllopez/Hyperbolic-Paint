@@ -42,7 +42,11 @@ class HypCanvas {
       this.startY = oldCanvas.startY;
 
       // Animation variables
-      // TO DO
+      this.transforming = oldCanvas.transforming;
+      this.lastTimestamp = oldCanvas.lastTimestamp;
+      this.transformSpeed = oldCanvas.transformSpeed;
+      this.centerOfRotation = oldCanvas.centerOfRotation;
+      this.transformId = oldCanvas.transformId;
     }
 
     // Set this properties to default value
@@ -56,10 +60,13 @@ class HypCanvas {
       this.lineWidth = 2;
       this.anchorSize = 5;
 
+      const centerOfRotation = Point.randPoint().scale(this.radius);
+      centerOfRotation.fillStyle = 'red';
+
       this.shapes = {
-        clickedPoints: [],
+        clickedPoints: [centerOfRotation],
         lines: [],
-        polygons: [genRandomTriangle(this)],
+        polygons: [genRandomTriangle(this), genRandomTriangle(this)],
         // polygons: []
       };
       this.shapeHistory = [];
@@ -73,7 +80,10 @@ class HypCanvas {
       this.startY = null;
 
       // Animation variables
-      // TO DO
+      this.transforming = false;
+      this.lastTimestamp = null;
+      this.transformSpeed = 0.002;
+      this.centerOfRotation = centerOfRotation;
     }
   };
 }
@@ -117,7 +127,15 @@ class Point {
     return adjustedPoint;
   }
 
-  static randPoint = () => new Point(Math.random(), Math.random());
+  static randPoint = () => {
+    let re;
+    let im;
+    do {
+      re = 2 * Math.random() - 1;
+      im = 2 * Math.random() - 1;
+    } while (re**2 + im**2 > 1);
+    return new Point(re, im)
+  };
   
   draw(hypCanvas, drawAnchor = true) {
     // Prepare the label
@@ -521,7 +539,7 @@ class Polygon {
 }
 
 function genRandomTriangle(hypCanvas) {
-  const radius = hypCanvas.radius
+  const radius = hypCanvas.radius;
   const vertices = [];
   do {
     let re;
@@ -546,25 +564,26 @@ function genRandomTriangle(hypCanvas) {
 
 class Mobius {
   /** Will be of the form z \mapsto (az + b)/(cz + d) */
-  constructor(a, b, c, d) {
+  constructor(hypCanvas, a, b, c, d) {
+    this.hypCanvas = hypCanvas;
     this.a = a;
-    this.b = b;
-    this.c = c;
+    this.b = b.scale(hypCanvas.radius);
+    this.c = c.scale(1/hypCanvas.radius);
     this.d = d;
   }
 
-  static IDENTITY = new Mobius(
-    new Point(1, 0),
-    new Point(0, 0),
-    new Point(0, 0),
-    new Point(1, 0)
-  );
-  static ROTATE(center, theta) {
-    const a = new Point(Math.cos(theta), Math.sin(theta));
-    const b = (a.times(center)).scale(-1);
-    const c = center.conjugate().scale(-1);
-    const d = new Point(1, 0);
-    return new Mobius(a, b, c, d);
+  static ROTATE(hypCanvas, center, theta) {
+    const centerNormalized = center.scale(1/hypCanvas.radius);
+    const euler = new Point(Math.cos(theta), Math.sin(theta));
+    const one = new Point(1, 0);
+    const centerLengthSquared = one.scale(centerNormalized.modulus**2);
+
+    const a = euler.minus(centerLengthSquared);
+    const b = centerNormalized.times(one.minus(euler));
+    const c = (centerNormalized.conjugate()).times(euler.minus(one));
+    const d = one.minus(euler.scale(centerNormalized.modulus**2));
+
+    return new Mobius(hypCanvas, a, b, c, d);
   }
 
   applyTo(shape) {
@@ -596,7 +615,7 @@ class Mobius {
     // Polygons
     else if (shape instanceof Polygon) {
       // Apply the mobius transformation to each of the edges
-      const adjEdges = this.edges.map(edge => this.applyTo(edge));
+      const adjEdges = shape.edges.map(edge => this.applyTo(edge));
 
       // Create a new polygon with the adjusted edges
       const adjPoly = new Polygon(shape.hypCanvas, ...adjEdges);
@@ -606,5 +625,19 @@ class Mobius {
     }
   }
 }
+
+// function testMobius() {
+//   const one = new Point(1, 0);
+//   const zero = new Point(0, 0);
+//   const i = new Point(0, 1);
+  
+//   const theta = Math.PI / 9;
+//   const rotate = Mobius.ROTATE(zero, theta);
+//   const oneRotated = new Point(Math.cos(theta), Math.sin(theta));
+
+//   console.log(rotate.applyTo(one).toString());
+//   console.log(oneRotated.toString());
+// }
+// testMobius();
 
 export { HypCanvas, Point, Line, Polygon, Mobius }

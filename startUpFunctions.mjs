@@ -2,6 +2,7 @@ import { HypCanvas, Point } from "./classes.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
 import { deepCopyShapes, getCanvasCoord, removeBorder, resetToolBar, unselectAllShapes } from "./util.mjs";
 import { lineClick, polygonClick, selectDown, selectMove, selectUp } from "./toolbarHandlers.mjs";
+import { runTransformation } from "./transformHandlers.mjs";
 
 /**
  * STARTUP
@@ -42,8 +43,14 @@ function attachDefaultEventListeners(hypCanvas) {
   // Cursor event listeners
   attachCursorEventListeners(hypCanvas);
 
-  // Select tool event liseners
+  // Drawing tool event liseners
   attachToolbarEventListeners(hypCanvas);
+
+  // Transform options event listeners
+  attachTransformControlsEventListeners(hypCanvas);
+
+  // Transform tools event listeners
+  attachTransformToolsEventListeners(hypCanvas);
 
   // Color type (stroke or fill) event listeners
   attachColorTypeEventListeners(hypCanvas);
@@ -191,6 +198,32 @@ function attachToolbarEventListeners(hypCanvas) {
       switchToolListeners(e, hypCanvas)
     )
   );
+}
+
+function attachTransformControlsEventListeners(hypCanvas) {
+  // Play button
+  const playButton = document.querySelector('#play');
+  playButton.addEventListener('click', () => {
+    if (!hypCanvas.transforming) {
+      hypCanvas.transforming = true;
+      runTransformation(hypCanvas);
+    }
+  });
+
+  // Pause button
+  const pauseButton = document.querySelector('#pause');
+  pauseButton.addEventListener('click', () => {
+    if (hypCanvas.transforming) {
+      hypCanvas.transforming = false;
+      hypCanvas.lastTimestamp = null;
+    }
+  });
+
+  // Transform speed
+  const speedRange = document.querySelector('#speed');
+  speedRange.addEventListener('input', e => {
+    hypCanvas.transformSpeed = 0.0001 * e.target.value;
+  });
 }
 
 function attachColorTypeEventListeners(hypCanvas) {

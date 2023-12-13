@@ -83,13 +83,19 @@
       </div>  
 
       <!-- TRANSFORMATIONS -->
-      <!-- <div> -->
-        <!-- <h3>Transformations</h3> -->
+      <div>
+        <h3>Transformations</h3>
+
+        <!-- TRANSFORMATION CONTROLS -->
+        <button id="play" class="transformButton">&#9654; Play</button>
+        <button id="pause" class="transformButton">&#9208; Pause</button>
+        <input type="range" min="-100" max="100" value="20" class="speed" id="speed">
+        <label for="speed"></label><br>
   
         <!-- ROTATIONS -->
-        <!-- <input type="radio" id="rotate" name="transforms" value="rotate" checked>
+        <input type="radio" id="rotate" name="transforms" value="rotate" checked>
         <label for="rotate"></label><br>
-      </div> -->
+      </div>
 
       <!-- COLOR SELECTOR -->
       <div>
@@ -158,13 +164,13 @@
         span: "Click two points to draw a line."},
       segment: {
         p: "Draw Line Segment",
-        span: "Click two points to draw a line segment"},
+        span: "Click two points to draw a line segment."},
       polygon: {
         p: "Draw Polygon",
-        span: "Hold shift while clicking to place the last point"},
+        span: "Hold shift while clicking to place the last point."},
       rotate: {
-        p: "Choose Center\nof Rotation",
-        span: "(COMING SOON!) Click a point to rotate around"},
+        p: "Choose Center of Rotation",
+        span: "Click a point to rotate around."},
       stroke: {
         p: "Stroke Color",
         span: "The color of lines or the boundaries of polygons."},
@@ -174,6 +180,10 @@
       width: {
         p: "Stroke Width",
         span: "The thickness of lines and the boundaries of polygons."},
+      speed: {
+        p: "Speed",
+        span: "Adjust the speed that shapes are transformed."
+      }
     }
 
     document.querySelectorAll('label').forEach(label => {
