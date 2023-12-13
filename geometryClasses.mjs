@@ -22,11 +22,11 @@ class HypCanvas {
     if (oldCanvas instanceof HypCanvas) {
       // Store the toolbar info
       this.activeTool = oldCanvas.activeTool;
-      // this.activeTransform = oldCanvas.activeTransform;
       this.colorType = oldCanvas.colorType;
       this.strokeStyle = oldCanvas.strokeStyle;
       this.fillStyle = oldCanvas.fillStyle;
       this.lineWidth = oldCanvas.lineWidth;
+      this.globalAlpha = oldCanvas.globalAlpha;
       this.anchorSize = oldCanvas.anchorSize;
 
       // Initialize shapes and cursor
@@ -43,6 +43,7 @@ class HypCanvas {
 
       // Animation variables
       this.transforming = oldCanvas.transforming;
+      this.activeTransform = oldCanvas.activeTransform;
       this.lastTimestamp = oldCanvas.lastTimestamp;
       this.transformSpeed = oldCanvas.transformSpeed;
       this.centerOfRotation = oldCanvas.centerOfRotation;
@@ -53,11 +54,11 @@ class HypCanvas {
     else {
       // Store the toolbar info
       this.activeTool = 'clickDrag';
-      // this.activeTransform = 'rotate';
       this.colorType = 'stroke';
       this.strokeStyle = 'black';
       this.fillStyle = 'orange';
       this.lineWidth = 2;
+      this.globalAlpha = 0.5;
       this.anchorSize = 5;
 
       this.shapes = {
@@ -79,7 +80,7 @@ class HypCanvas {
       this.transforming = false;
       this.activeTransform = null;
       this.lastTimestamp = null;
-      this.transformSpeed = 0.001;
+      this.transformSpeed = 0.0001;
       this.centerOfRotation = null;
       this.axisOfTranslation = null;
     }
@@ -459,6 +460,7 @@ class Polygon {
     this.hypCanvas = hypCanvas;
     this.selected = false;
     this.fillStyle = this.hypCanvas.fillStyle;
+    this.globalAlpha = this.hypCanvas.globalAlpha;
 
     // Record and copy the edges
     this.edges = edges;
@@ -505,6 +507,7 @@ class Polygon {
       // Initialize the context
       const ctx = hypCanvas.ctx;
       ctx.fillStyle = this.fillStyle;
+      ctx.globalAlpha = this.globalAlpha;
 
       // Trace the boundary using the oriented edges
       ctx.beginPath();
@@ -541,6 +544,7 @@ class Polygon {
         }
       }
       ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
     // Draw the edges
@@ -551,6 +555,7 @@ class Polygon {
     this.hypCanvas = that.hypCanvas;
     this.selected = that.selected;
     this.fillStyle = that.fillStyle;
+    this.globalAlpha = that.globalAlpha;
   }
 
   recalculatePosition(changeX, changeY) {
@@ -674,7 +679,7 @@ class Mobius {
       const adjPoly = new Polygon(shape.hypCanvas, ...adjEdges);
       adjPoly.copyDrawingProperties(shape);
 
-      return new Polygon(shape.hypCanvas, ...adjEdges);
+      return adjPoly;
     }
   }
 }

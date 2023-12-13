@@ -62,7 +62,7 @@
     <!-- --------------- -->
     <div class="right-container container">
 
-      <!-- DRAWING TOOLS -->
+      <!-- TOOLS -->
       <div>
         <h3>Tools</h3>
     
@@ -91,7 +91,7 @@
         <label for="translate"></label><br>
       </div>  
 
-      <!-- TRANSFORMATIONS -->
+      <!-- CONTROLS -->
       <div>
         <h3>Controls</h3>
 
@@ -102,9 +102,9 @@
         <label for="speed"></label><br>
       </div>
 
-      <!-- COLOR SELECTOR -->
+      <!-- STYLES -->
       <div>
-        <h3>Color Selector</h3>
+        <h3>Styles</h3>
 
         <!-- STROKE OPTION -->
         <input type="radio" id="stroke" name="color-type" value="stroke" checked>
@@ -137,11 +137,13 @@
       
       <!-- SHAPE OPTIONS -->
       <div>
-        <h3>Shape Options</h3>
-
         <!-- LINE WIDTH -->
         <input type="range" min="1" max="10" value="2" class="width" id="width">
         <label for="width"></label><br>
+
+        <!-- FILL OPACITY -->
+        <input type="range" min="0" max="100" value="50" class="opacity" id="opacity">
+        <label for="opacity"></label><br>
       </div>
 
       <!-- UNDO, DELETE, CLEAR -->
@@ -185,22 +187,26 @@
         p: "Translate",
         span: "Click two points to specify a translation direction."
       },
+      speed: {
+        p: "Speed",
+        span: "Adjust the speed that shapes are transformed."
+      },
       stroke: {
-        p: "Stroke Color",
-        span: "The color of lines or the boundaries of polygons."
+        p: "Line Color",
+        span: "The color of lines and the boundaries of polygons."
       },
       fill: {
         p: "Fill Color",
         span: "The color of the interiors of polygons."
       },
       width: {
-        p: "Stroke Width",
+        p: "Line Width",
         span: "The thickness of lines and the boundaries of polygons."
       },
-      speed: {
-        p: "Speed",
-        span: "Adjust the speed that shapes are transformed."
-      },
+      opacity: {
+        p: "Fill Opacity",
+        span: "The translucence of polygon interiors."
+      }
     }
 
     document.querySelectorAll('label').forEach(label => {

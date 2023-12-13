@@ -69,6 +69,9 @@ function attachDefaultEventListeners(hypCanvas) {
   // Line width event listener
   attachLineWidthEventListeners(hypCanvas);
 
+  // Fill opacity event listener
+  attachFillOpacityEventListeners(hypCanvas);
+
   // Undo, delete, and clear event listeners
   attachEditButtonsEventListeners(hypCanvas);
 }
@@ -556,6 +559,42 @@ function attachLineWidthEventListeners(hypCanvas) {
 
   // Attach changeLineWidth to the line width range
   lineWidthRange.addEventListener('input', e => changeLineWidth(e, hypCanvas));
+}
+
+function attachFillOpacityEventListeners(hypCanvas) {
+  // Get the fill opacity range
+  const fillOpacityRange = document.querySelector('.opacity')
+
+  // Fill opacity handler
+  function changeFillOpacity(e, hypCanvas) {
+    // Get the new fill opacity
+    const newGlobalAlpha = e.target.value / 100;
+
+    // If there are selected shapes, update their fill opacity
+    if (hypCanvas.selected) {
+      // Save a copy of the current shapes
+      const shapes = hypCanvas.shapes;
+      hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
+
+      // Polygons
+      for (const polygon of shapes.polygons) {
+        if (polygon.selected) {
+          polygon.globalAlpha = newGlobalAlpha;
+        }
+      }
+
+      // Redraw the canvas
+      drawAll(hypCanvas);
+    }
+
+    // Otherwise, update hypCanvas
+    else {
+      hypCanvas.globalAlpha = newGlobalAlpha;
+    }
+  }
+
+  // Attach changeFillOpacity to the fill opacity range
+  fillOpacityRange.addEventListener('input', e => changeFillOpacity(e, hypCanvas));
 }
 
 function attachEditButtonsEventListeners(hypCanvas) {
