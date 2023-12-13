@@ -308,7 +308,7 @@ function attachTransformControlsEventListeners(hypCanvas) {
   // Transform speed
   const speedRange = document.querySelector('#speed');
   speedRange.addEventListener('input', e => {
-    hypCanvas.transformSpeed = 0.0001 * e.target.value;
+    hypCanvas.transformSpeed = 0.00001 * e.target.value;
   });
 }
 
