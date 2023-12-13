@@ -1,7 +1,7 @@
 import { HypCanvas, Point, Mobius } from "./classes.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
 import { deepCopyShapes, getCanvasCoord, removeBorder, resetToolBar, unselectAllShapes } from "./util.mjs";
-import { lineClick, polygonClick, rotateClick, selectDown, selectMove, selectUp, translateClick } from "./toolbarHandlers.mjs";
+import { lineClick, polygonClick, rotateClick, clickDragDown, clickDragMove, clickDragUp, translateClick } from "./toolbarHandlers.mjs";
 
 /**
  * STARTUP
@@ -117,14 +117,14 @@ function attachCursorEventListeners(hypCanvas) {
 
 function attachToolbarEventListeners(hypCanvas) {
   // Wrapping the toolbar handlers so they can be removed
-  function handleSelectDown(e) {
-    selectDown(e, hypCanvas);
+  function handleClickDragDown(e) {
+    clickDragDown(e, hypCanvas);
   }
-  function handleSelectMove(e) {
-    selectMove(e, hypCanvas);
+  function handleClickDragMove(e) {
+    clickDragMove(e, hypCanvas);
   }
-  function handleSelectUp(e) {
-    selectUp(e, hypCanvas);
+  function handleClickDragUp(e) {
+    clickDragUp(e, hypCanvas);
   }
   function handleLineClick(e) {
     lineClick(e, hypCanvas);
@@ -141,18 +141,18 @@ function attachToolbarEventListeners(hypCanvas) {
 
   // Attach the select tool event listeners to canvas
   const canvas = hypCanvas.canvas;
-  canvas.addEventListener('mousedown', handleSelectDown);
-  canvas.addEventListener('mousemove', handleSelectMove);
-  canvas.addEventListener('mouseup', handleSelectUp);
+  canvas.addEventListener('mousedown', handleClickDragDown);
+  canvas.addEventListener('mousemove', handleClickDragMove);
+  canvas.addEventListener('mouseup', handleClickDragUp);
 
   // Switch tools handler
   function switchToolListeners(e, hypCanvas) {
     // Map to pair tools and events
     const toolListenersMap = {
       clickDrag: [
-        ['mousedown', handleSelectDown],
-        ['mousemove', handleSelectMove],
-        ['mouseup', handleSelectUp],
+        ['mousedown', handleClickDragDown],
+        ['mousemove', handleClickDragMove],
+        ['mouseup', handleClickDragUp],
       ],
       line: [
         ['click', handleLineClick]

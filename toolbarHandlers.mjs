@@ -10,7 +10,7 @@ import { Point, Line, Polygon } from "./classes.mjs";
  * DRAWING TOOLS
  */
 //#region
-function selectDown(e, hypCanvas) {
+function clickDragDown(e, hypCanvas) {
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
 
@@ -108,7 +108,7 @@ function selectDown(e, hypCanvas) {
 
 }
 
-function selectMove(e, hypCanvas) {
+function clickDragMove(e, hypCanvas) {
   // Only proceed if a shape is being dragged
   if (hypCanvas.dragging) {
     // Get canvas coordinates
@@ -153,7 +153,7 @@ function selectMove(e, hypCanvas) {
   }
 }
 
-function selectUp(e, hypCanvas) {
+function clickDragUp(e, hypCanvas) {
   // Turn off the dragging flag
   hypCanvas.dragging = false;
 
@@ -321,9 +321,9 @@ function translateClick(e, hypCanvas) {
 //#endregion
 
 export {
-  selectDown,
-  selectMove,
-  selectUp,
+  clickDragDown,
+  clickDragMove,
+  clickDragUp,
   lineClick,
   polygonClick,
   rotateClick,
