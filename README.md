@@ -7,9 +7,9 @@ I used W3 schools tooltips page for the toolbar as well: https://www.w3schools.c
 
 To do:
 
-- Make center of rotation draggable while animation is running
+- Make the axis of translation draggable while animation is running
 
-- Add translations along an axis
+- (Optional) Repackage center of rotation and axis of translation for organizational purposes and DRY
 
 Next steps:
 

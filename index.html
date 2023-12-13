@@ -34,7 +34,8 @@
 
         <p>Use this tool to explore the Disk Model by drawing lines and polygons. Drag
           the shapes you create using their anchor points, and style them using the
-          inputs on the right side of the screen.</p>
+          inputs on the right side of the screen. Use the control toggles to start,
+          stop, and change the speed of transformations.</p>
       </div>
       
 
@@ -84,6 +85,10 @@
         <!-- ROTATIONS -->
         <input type="radio" id="rotate" name="tools" value="rotate">
         <label for="rotate"></label><br>
+
+        <!-- TRANSLATIONS -->
+        <input type="radio" id="translate" name="tools" value="translate">
+        <label for="translate"></label><br>
       </div>  
 
       <!-- TRANSFORMATIONS -->
@@ -158,32 +163,44 @@
     const ALL_TOOLTIP_TEXT = {
       clickDrag: {
         p: "Click and Drag",
-        span: "Select or drag a shape by clicking one of its anchors."},
+        span: "Select or drag a shape by clicking one of its anchors."
+      },
       line: {
         p: "Draw Full Line",
-        span: "Click two points to draw a line."},
+        span: "Click two points to draw a line."
+      },
       segment: {
         p: "Draw Line Segment",
-        span: "Click two points to draw a line segment."},
+        span: "Click two points to draw a line segment."
+      },
       polygon: {
         p: "Draw Polygon",
-        span: "Hold shift while clicking to place the last point."},
+        span: "Hold shift while clicking to place the last point."
+      },
       rotate: {
-        p: "Choose Center of Rotation",
-        span: "Click a point to rotate around."},
+        p: "Rotate",
+        span: "Click a point to rotate around."
+      },
+      translate: {
+        p: "Translate",
+        span: "Click two points to specify a translation direction."
+      },
       stroke: {
         p: "Stroke Color",
-        span: "The color of lines or the boundaries of polygons."},
+        span: "The color of lines or the boundaries of polygons."
+      },
       fill: {
         p: "Fill Color",
-        span: "The color of the interiors of polygons."},
+        span: "The color of the interiors of polygons."
+      },
       width: {
         p: "Stroke Width",
-        span: "The thickness of lines and the boundaries of polygons."},
+        span: "The thickness of lines and the boundaries of polygons."
+      },
       speed: {
         p: "Speed",
         span: "Adjust the speed that shapes are transformed."
-      }
+      },
     }
 
     document.querySelectorAll('label').forEach(label => {

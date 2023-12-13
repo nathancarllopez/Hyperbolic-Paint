@@ -22,7 +22,7 @@ class HypCanvas {
     if (oldCanvas instanceof HypCanvas) {
       // Store the toolbar info
       this.activeTool = oldCanvas.activeTool;
-      this.activeTransform = oldCanvas.activeTransform;
+      // this.activeTransform = oldCanvas.activeTransform;
       this.colorType = oldCanvas.colorType;
       this.strokeStyle = oldCanvas.strokeStyle;
       this.fillStyle = oldCanvas.fillStyle;
@@ -46,29 +46,24 @@ class HypCanvas {
       this.lastTimestamp = oldCanvas.lastTimestamp;
       this.transformSpeed = oldCanvas.transformSpeed;
       this.centerOfRotation = oldCanvas.centerOfRotation;
-      this.transformId = oldCanvas.transformId;
+      this.axisOfTranslation = oldCanvas.axisOfTranslation;
     }
 
     // Set this properties to default value
     else {
       // Store the toolbar info
       this.activeTool = 'clickDrag';
-      this.activeTransform = 'rotate';
+      // this.activeTransform = 'rotate';
       this.colorType = 'stroke';
       this.strokeStyle = 'black';
       this.fillStyle = 'orange';
       this.lineWidth = 2;
       this.anchorSize = 5;
 
-      // const centerOfRotation = Point.randPoint().scale(this.radius);
-      // centerOfRotation.fillStyle = 'red';
-
       this.shapes = {
-        // clickedPoints: [centerOfRotation],
         clickedPoints: [],
         lines: [],
-        polygons: [genRandomTriangle(this), genRandomTriangle(this)],
-        // polygons: []
+        polygons: [genRandomTriangle(this)],
       };
       this.shapeHistory = [];
       this.cursor = { display: false};
@@ -85,6 +80,7 @@ class HypCanvas {
       this.lastTimestamp = null;
       this.transformSpeed = 0.001;
       this.centerOfRotation = null;
+      this.axisOfTranslation = null;
     }
   };
 }
@@ -141,7 +137,7 @@ class Point {
     return (mouseX - this.x)**2 + (mouseY - this.y)**2 < this.anchorSize**2;
   }
 
-  changeCoord(changeX, changeY) {
+  recalculatePosition(changeX, changeY) {
     // Create a new point with the new coordinates
     const adjustedPoint = new Point(this.x + changeX, this.y + changeY);
 
@@ -350,6 +346,47 @@ class Line {
     }
   }
 
+  getEndpoints(normalized = true) {
+    // If line is a diameter, endpoints are already calculated
+    if (this.diameter) {
+      return [this.endpoint1, this.endpoint2];
+    }
+
+    // Otherwise, get and normalize the center and radius
+    const centerNormalized = this.center.scale(1/this.hypCanvas.radius);
+    const radiusNormalized = this.radius/this.hypCanvas.radius;
+
+    // Calculate endpoints using center and radius:
+    // Solving |z - center|^2 = radius^2 leads to a quadratic equation in z,
+    // then use the quadratic formula.
+    const beta = radiusNormalized**2 - 1 - centerNormalized.modulus**2;
+    const betaPoint = new Point(1, 0).scale(beta);
+    const discSquared = beta**2 - 4 * centerNormalized.modulus**2;
+    const discriminant = discSquared > 0 ?
+      Math.sqrt(discSquared) :
+      Math.sqrt(-discSquared);
+    const discrPoint = discSquared > 0 ?
+      new Point(1, 0).scale(discriminant) :
+      new Point(0, 1).scale(discriminant);
+    const posNumerator = discrPoint.minus(betaPoint);
+    const negNumerator = (discrPoint.scale(-1)).minus(betaPoint);
+    const denominator = (centerNormalized.conjugate()).scale(2);
+    const posEndpoint = posNumerator.dividedBy(denominator);
+    const negEndpoint = negNumerator.dividedBy(denominator);
+
+    // If not normalized, rescale up to the canvas size
+    if (!normalized) {
+      posEndpoint.scale(this.hypCanvas.radius);
+      negEndpoint.scale(this.hypCanvas.radius);
+    }
+
+    // Return the endpoints in increasing order of argument
+    if (posEndpoint.argument < negEndpoint.argument) {
+      return [posEndpoint, negEndpoint];
+    }
+    return [negEndpoint, posEndpoint];
+  }
+
   copyDrawingProperties(that) {
     this.hypCanvas = that.hypCanvas;
     this.selected = that.selected;
@@ -365,7 +402,7 @@ class Line {
     const adjustedAnchors = [];
     for (const anchor of [anchor1, anchor2]) {
       if (anchor.selected) {
-        adjustedAnchors.push(anchor.changeCoord(changeX, changeY));
+        adjustedAnchors.push(anchor.recalculatePosition(changeX, changeY));
       } else {
         adjustedAnchors.push(anchor);
       }
@@ -587,6 +624,20 @@ class Mobius {
     return new Mobius(hypCanvas, a, b, c, d);
   }
 
+  static TRANSLATE(hypCanvas, axis, translationDistance) {
+    const endpoints = axis.getEndpoints();
+    const p = endpoints[0];
+    const q = endpoints[1];
+    const e = Math.exp(translationDistance);
+
+    const a = (q.scale(e)).minus(p);
+    const b = (p.times(q)).scale(1 - e);
+    const c = new Point(e - 1, 0);
+    const d = q.minus(p.scale(e));
+
+    return new Mobius(hypCanvas, a, b, c, d);
+  }
+
   applyTo(shape) {
     // Points
     if (shape instanceof Point) {
@@ -627,18 +678,4 @@ class Mobius {
   }
 }
 
-// function testMobius() {
-//   const one = new Point(1, 0);
-//   const zero = new Point(0, 0);
-//   const i = new Point(0, 1);
-  
-//   const theta = Math.PI / 9;
-//   const rotate = Mobius.ROTATE(zero, theta);
-//   const oneRotated = new Point(Math.cos(theta), Math.sin(theta));
-
-//   console.log(rotate.applyTo(one).toString());
-//   console.log(oneRotated.toString());
-// }
-// testMobius();
-
-export { HypCanvas, Point, Line, Polygon, Mobius }
+export { HypCanvas, Point, Line, Polygon, Mobius, genRandomTriangle }

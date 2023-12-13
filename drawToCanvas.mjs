@@ -39,6 +39,11 @@ function drawShapes(hypCanvas) {
   if (hypCanvas.centerOfRotation) {
     hypCanvas.centerOfRotation.draw(hypCanvas);
   }
+
+  // Draw the axis of translation
+  if (hypCanvas.axisOfTranslation) {
+    hypCanvas.axisOfTranslation.axis.draw(hypCanvas);
+  }
 }
 
 // Draw boundary and mask outside of it

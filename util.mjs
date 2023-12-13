@@ -69,7 +69,7 @@ function deepCopyShapes(shapes) {
 
   // Copy the clicked points
   for (const clicked of shapes.clickedPoints) {
-    deepCopy.clickedPoints.push(clicked.changeCoord(0, 0));
+    deepCopy.clickedPoints.push(clicked.recalculatePosition(0, 0));
   }
 
   return deepCopy;

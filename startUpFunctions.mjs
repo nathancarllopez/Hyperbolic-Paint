@@ -1,8 +1,7 @@
-import { HypCanvas, Point } from "./classes.mjs";
+import { HypCanvas, Point, Mobius } from "./classes.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
 import { deepCopyShapes, getCanvasCoord, removeBorder, resetToolBar, unselectAllShapes } from "./util.mjs";
-import { lineClick, polygonClick, rotateClick, selectDown, selectMove, selectUp } from "./toolbarHandlers.mjs";
-import { runTransformation } from "./transformHandlers.mjs";
+import { lineClick, polygonClick, rotateClick, selectDown, selectMove, selectUp, translateClick } from "./toolbarHandlers.mjs";
 
 /**
  * STARTUP
@@ -34,6 +33,18 @@ function createHypCanvas(oldCanvas = {}) {
 
   return hypCanvas
 }
+
+// function testGetEndpoints() {
+//   const hypCanvas = createHypCanvas()
+//   const triangle = genRandomTriangle(hypCanvas);
+//   for (const edge of triangle.edges) {
+//     const edgeEndpoints = edge.getEndpoints();
+//     for (const endpoint of edgeEndpoints) {
+//       console.log(endpoint);
+//     }
+//   }
+// }
+// testGetEndpoints();
 
 function attachDefaultEventListeners(hypCanvas) {
   // Window resize event listener
@@ -121,8 +132,11 @@ function attachToolbarEventListeners(hypCanvas) {
   function handlePolygonClick(e) {
     polygonClick(e, hypCanvas);
   }
-  function handleRotationClick(e) {
+  function handleRotateClick(e) {
     rotateClick(e, hypCanvas)
+  }
+  function handleTranslateClick(e) {
+    translateClick(e, hypCanvas);
   }
 
   // Attach the select tool event listeners to canvas
@@ -150,7 +164,10 @@ function attachToolbarEventListeners(hypCanvas) {
         ['click', handlePolygonClick]
       ],
       rotate: [
-        ['click', handleRotationClick]
+        ['click', handleRotateClick]
+      ],
+      translate: [
+        ['click', handleTranslateClick]
       ]
     }
 
@@ -170,9 +187,6 @@ function attachToolbarEventListeners(hypCanvas) {
         hypCanvas.transforming = false;
         hypCanvas.lastTimestamp = null;
       }
-      // if (hypCanvas.activeTool !== 'rotate') {
-      //   hypCanvas.centerOfRotation = null;
-      // }
     }
     resetToolBar(hypCanvas);
 
@@ -192,10 +206,83 @@ function attachToolbarEventListeners(hypCanvas) {
 }
 
 function attachTransformControlsEventListeners(hypCanvas) {
+  // Transformation handler
+  function runTransformation(hypCanvas) {
+    // Transformation callbacks
+    function rotate(timestamp) {
+      // Only proceed if hypCanvas.transforming is true
+      if (hypCanvas.transforming) {
+        // Calculate how much time has passed
+        const elapsed = hypCanvas.lastTimestamp ?
+          timestamp - hypCanvas.lastTimestamp :
+          0;
+        hypCanvas.lastTimestamp = timestamp;
+        
+        // Determine the mobius transformation
+        const theta = (hypCanvas.transformSpeed * elapsed) % (2 * Math.PI);
+        const rotateByTheta = Mobius.ROTATE(hypCanvas, hypCanvas.centerOfRotation, theta);
+  
+        // Apply mobius transformation to all shapes
+        for (const shapeType in hypCanvas.shapes) {
+          const shapeArray = hypCanvas.shapes[shapeType];
+          hypCanvas.shapes[shapeType] = shapeArray.map(
+            shape => rotateByTheta.applyTo(shape)
+          );
+        }
+  
+        // Redraw the canvas
+        drawAll(hypCanvas);
+  
+        // Move forward another frame
+        requestAnimationFrame(rotate);
+      }
+    };
+    function translate(timestamp) {
+      // Only proceed if hypCanvas.transforming is true
+      if (hypCanvas.transforming) {
+        // Calculate how much time has passed
+        const elapsed = hypCanvas.lastTimestamp ?
+          timestamp - hypCanvas.lastTimestamp :
+          0;
+        hypCanvas.lastTimestamp = timestamp;
+        
+        // Determine the mobius transformation
+        const axisOfTranslation = hypCanvas.axisOfTranslation.axis;
+        const translationDistance = hypCanvas.axisOfTranslation.firstPoint.isEqualTo(axisOfTranslation.anchor1) ?
+          hypCanvas.transformSpeed * elapsed :
+          -hypCanvas.transformSpeed * elapsed;
+        const translateByDist = Mobius.TRANSLATE(hypCanvas, axisOfTranslation, translationDistance);
+
+        // Apply mobius transformation to all shapes
+        for (const shapeType in hypCanvas.shapes) {
+          const shapeArray = hypCanvas.shapes[shapeType];
+          hypCanvas.shapes[shapeType] = shapeArray.map(
+            shape => translateByDist.applyTo(shape)
+          );
+        }
+  
+        // Redraw the canvas
+        drawAll(hypCanvas);
+  
+        // Move forward another frame
+        requestAnimationFrame(translate);
+      }
+    }
+    const allTransforms = {
+      "rotate": rotate,
+      "translate": translate
+    };
+  
+    // Start transforming
+    const activeTransform = allTransforms[hypCanvas.activeTool];
+    requestAnimationFrame(activeTransform);
+  }
+
   // Play button
   const playButton = document.querySelector('#play');
   playButton.addEventListener('click', () => {
-    if (!hypCanvas.transforming) {
+    const transformShapePlaced = hypCanvas.centerOfRotation || hypCanvas.axisOfTranslation;
+    if (!hypCanvas.transforming && transformShapePlaced) {
       hypCanvas.transforming = true;
       runTransformation(hypCanvas);
     }
