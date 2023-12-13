@@ -351,7 +351,17 @@ class Line {
   getEndpoints(normalized = true) {
     // If line is a diameter, endpoints are already calculated
     if (this.diameter) {
-      return [this.endpoint1, this.endpoint2];
+      const endpoint1 = normalized ? 
+        this.endpoint1.scale(1/this.hypCanvas.radius) :
+        this.endpoint1;
+      const endpoint2 = normalized ?
+        this.endpoint2.scale(1/this.hypCanvas.radius) :
+        this.endpoint2;
+      const endpoints = endpoint1.argument > endpoint2.argument ?
+        [endpoint1, endpoint2] :
+        [endpoint2, endpoint1];
+
+      return endpoints
     }
 
     // Otherwise, get and normalize the center and radius

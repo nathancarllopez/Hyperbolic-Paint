@@ -9,7 +9,7 @@ function unselectAllShapes(hypCanvas) {
   // Clear out selected shapes array
   hypCanvas.selected = false;
 
-  // Reset lines selected property
+  // Unselect lines
   for (const line of hypCanvas.shapes.lines) {
     line.selected = false;
     for (const anchor of line.anchors) {
@@ -18,7 +18,7 @@ function unselectAllShapes(hypCanvas) {
     }
   }
 
-  // Reset polygons selected property
+  // Unselect polygons
   for (const polygon of hypCanvas.shapes.polygons) {
     polygon.selected = false;
     for (const edge of polygon.edges) {
@@ -26,6 +26,22 @@ function unselectAllShapes(hypCanvas) {
       for (const anchor of edge.anchors) {
         anchor.selected = false;
         anchor.fillStyle = 'gray';
+      }
+    }
+  }
+
+  // Unselect center of rotation
+  if (hypCanvas.centerOfRotation && hypCanvas.centerOfRotation.selected) {
+    hypCanvas.centerOfRotation.selected = false;
+  }
+
+  // Unselect axis of translation
+  if (hypCanvas.axisOfTranslation) {
+    const axis = hypCanvas.axisOfTranslation.axis;
+    if (axis.selected) {
+      axis.selected = false;
+      for (const anchor of axis.anchors) {
+        anchor.selected = false;
       }
     }
   }
