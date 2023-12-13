@@ -4,7 +4,7 @@ import {
   deepCopyShapes,
   adjustDraggingShapes } from "./util.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
-import { Point, Line, Polygon } from "./classes.mjs";
+import { Point, Line, Polygon } from "./geometryClasses.mjs";
 
 /**
  * DRAWING TOOLS

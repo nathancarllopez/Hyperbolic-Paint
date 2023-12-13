@@ -1,4 +1,4 @@
-import { HypCanvas, Point, Mobius } from "./classes.mjs";
+import { HypCanvas, Point, Mobius } from "./geometryClasses.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
 import { deepCopyShapes, getCanvasCoord, removeBorder, resetToolBar, unselectAllShapes } from "./util.mjs";
 import { lineClick, polygonClick, rotateClick, clickDragDown, clickDragMove, clickDragUp, translateClick } from "./toolbarHandlers.mjs";
