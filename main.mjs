@@ -274,7 +274,7 @@ function attachTransformControlsEventListeners(hypCanvas) {
     };
   
     // Start transforming
-    const activeTransform = allTransforms[hypCanvas.activeTool];
+    const activeTransform = allTransforms[hypCanvas.activeTransform];
     requestAnimationFrame(activeTransform);
   }
 
@@ -282,9 +282,14 @@ function attachTransformControlsEventListeners(hypCanvas) {
   const playButton = document.querySelector('#play');
   playButton.addEventListener('click', () => {
     const transformShapePlaced = hypCanvas.centerOfRotation || hypCanvas.axisOfTranslation;
-    if (!hypCanvas.transforming && transformShapePlaced) {
+    if (transformShapePlaced) {
       hypCanvas.transforming = true;
+      hypCanvas.activeTransform = hypCanvas.centerOfRotation ?
+        'rotate' :
+        'translate';
       runTransformation(hypCanvas);
+    } else {
+      alert('Choose a center of rotation or axis of translation to start transforming.')
     }
   });
 
@@ -293,7 +298,10 @@ function attachTransformControlsEventListeners(hypCanvas) {
   pauseButton.addEventListener('click', () => {
     if (hypCanvas.transforming) {
       hypCanvas.transforming = false;
+      hypCanvas.activeTransform = null;
       hypCanvas.lastTimestamp = null;
+    } else {
+      alert('Not currently transforming.')
     }
   });
 

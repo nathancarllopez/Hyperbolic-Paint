@@ -26,7 +26,7 @@ function clickDragDown(e, hypCanvas) {
     }
 
     // Create an array to hold the selected shape(s)
-    const selectedShapes = [];
+    // const selectedShapes = [];
 
     // Check if a line was selected
     for (const line of shapes.lines) {
@@ -35,7 +35,7 @@ function clickDragDown(e, hypCanvas) {
           anchor.selected = true;
           anchor.fillStyle = 'black';
           line.selected = true;
-          selectedShapes.push(line);
+          // selectedShapes.push(line);
           hypCanvas.selected = true;
           break;
         }
@@ -60,7 +60,7 @@ function clickDragDown(e, hypCanvas) {
         // Once we've found two selected edges, stop searching this polygon
         if (numSelectedEdges === 2) {
           polygon.selected = true;
-          selectedShapes.push(polygon);
+          // selectedShapes.push(polygon);
           hypCanvas.selected = true;
           break;
         }
@@ -72,6 +72,19 @@ function clickDragDown(e, hypCanvas) {
       if (hypCanvas.centerOfRotation.pointClicked(mouseX, mouseY)) {
         hypCanvas.centerOfRotation.selected = true;
         hypCanvas.selected = true;
+      }
+    }
+
+    // Check if the axis of translation was selected
+    if (hypCanvas.axisOfTranslation) {
+      const axis = hypCanvas.axisOfTranslation.axis;
+      for (const anchor of axis.anchors) {
+        if (anchor.pointClicked(mouseX, mouseY)) {
+          anchor.selected = true;
+          axis.selected = true;
+          hypCanvas.selected = true;
+          break;
+        }
       }
     }
 
@@ -136,6 +149,14 @@ function clickDragMove(e, hypCanvas) {
       if (hypCanvas.centerOfRotation) {
         if (hypCanvas.centerOfRotation.selected) {
           hypCanvas.centerOfRotation = hypCanvas.centerOfRotation.recalculatePosition(changeX, changeY);
+        }
+      }
+
+      // Adjust dragging axis of translation
+      if (hypCanvas.axisOfTranslation) {
+        const axis = hypCanvas.axisOfTranslation.axis;
+        if (axis.selected) {
+          hypCanvas.axisOfTranslation.axis = axis.recalculatePosition(changeX, changeY)
         }
       }
     }

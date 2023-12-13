@@ -77,6 +77,7 @@ class HypCanvas {
 
       // Animation variables
       this.transforming = false;
+      this.activeTransform = null;
       this.lastTimestamp = null;
       this.transformSpeed = 0.001;
       this.centerOfRotation = null;
