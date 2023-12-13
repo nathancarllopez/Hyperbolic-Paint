@@ -30,8 +30,14 @@ function clearCanvas(hypCanvas) {
 
 // Draws the shapes stored in hypCanvas.shapes
 function drawShapes(hypCanvas) {
+  // Draw all the clicked points, lines, and polygons
   for (const shapeArray of Object.values(hypCanvas.shapes)) {
     shapeArray.forEach(shape => shape.draw(hypCanvas));
+  }
+  
+  // Draw the center of rotation
+  if (hypCanvas.centerOfRotation) {
+    hypCanvas.centerOfRotation.draw(hypCanvas);
   }
 }
 

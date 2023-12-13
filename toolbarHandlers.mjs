@@ -155,9 +155,9 @@ function selectUp(e, hypCanvas) {
 }
 
 function lineClick(e, hypCanvas) {
-  // Unselect any selected shapes
-  if (hypCanvas.shapes.selected) {
-    unselectAllShapes(hypCanvas);
+  // Remove center of rotation
+  if (hypCanvas.centerOfRotation) {
+    hypCanvas.centerOfRotation = null;
   }
 
   // Get canvas coordinates
@@ -184,9 +184,9 @@ function lineClick(e, hypCanvas) {
 }
 
 function polygonClick(e, hypCanvas) {
-  // Unselect any selected shapes
-  if (hypCanvas.shapes.selected) {
-    unselectAllShapes(hypCanvas);
+  // Remove center of rotation
+  if (hypCanvas.centerOfRotation) {
+    hypCanvas.centerOfRotation = null;
   }
 
   // Get canvas coordinates
@@ -225,10 +225,27 @@ function polygonClick(e, hypCanvas) {
  * TRANSFORMATION TOOLS
  */
 //#region
-// TO DO
+function rotateClick(e, hypCanvas) {
+  // Get canvas coordinates
+  const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
+
+  // If cursor is inside boundary
+  const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
+  if (cursorInside) {
+    // Save a copy of the current shapes
+    hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+
+    // Update the center of rotation
+    hypCanvas.centerOfRotation = new Point(mouseX, mouseY);
+    hypCanvas.centerOfRotation.fillStyle = 'red';
+
+    // Redraw the canvas
+    drawAll(hypCanvas);
+  }
+}
 //#endregion
 
-export { selectDown, selectMove, selectUp, lineClick, polygonClick }
+export { selectDown, selectMove, selectUp, lineClick, polygonClick, rotateClick }
 
 // UNDER CONSTRUCTION
 function updateToolbar(hypCanvas, shape) {

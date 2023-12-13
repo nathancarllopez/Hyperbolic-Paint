@@ -1,7 +1,7 @@
 import { HypCanvas, Point } from "./classes.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
 import { deepCopyShapes, getCanvasCoord, removeBorder, resetToolBar, unselectAllShapes } from "./util.mjs";
-import { lineClick, polygonClick, selectDown, selectMove, selectUp } from "./toolbarHandlers.mjs";
+import { lineClick, polygonClick, rotateClick, selectDown, selectMove, selectUp } from "./toolbarHandlers.mjs";
 import { runTransformation } from "./transformHandlers.mjs";
 
 /**
@@ -49,9 +49,6 @@ function attachDefaultEventListeners(hypCanvas) {
   // Transform options event listeners
   attachTransformControlsEventListeners(hypCanvas);
 
-  // Transform tools event listeners
-  attachTransformToolsEventListeners(hypCanvas);
-
   // Color type (stroke or fill) event listeners
   attachColorTypeEventListeners(hypCanvas);
 
@@ -70,27 +67,6 @@ function attachDefaultEventListeners(hypCanvas) {
  * HELPER FUNCTIONS
  */
 //#region
-// NOT WORKING, SKIPPING FOR NOW
-// function attachWindowEventListener() {
-//   // Window resize handler
-//   function preventSmallWindow() {
-//     // Get the content width and height
-//     const contentWidth = document.body.scrollWidth || document.documentElement.scrollWidth;
-//     const contentHeight = document.body.scrollHeight || document.documentElement.scrollHeight;
-
-//     // Resize the window if the width or height get too small
-//     const windowWidth = window.innerWidth
-//     const windowHeight = window.innerHeight;
-//     if (windowWidth < contentWidth || windowHeight < contentHeight) {
-//       window.resizeTo(contentWidth, contentHeight);
-//     }
-//   }
-
-//   // Attach resize event listener
-//   window.addEventListener('resize', preventSmallWindow);
-//   preventSmallWindow();
-// }
-
 function attachCursorEventListeners(hypCanvas) {
   // Mouse move event handler for cursor
   function displayCursor(e, hypCanvas) {
@@ -145,6 +121,9 @@ function attachToolbarEventListeners(hypCanvas) {
   function handlePolygonClick(e) {
     polygonClick(e, hypCanvas);
   }
+  function handleRotationClick(e) {
+    rotateClick(e, hypCanvas)
+  }
 
   // Attach the select tool event listeners to canvas
   const canvas = hypCanvas.canvas;
@@ -170,6 +149,9 @@ function attachToolbarEventListeners(hypCanvas) {
       polygon: [
         ['click', handlePolygonClick]
       ],
+      rotate: [
+        ['click', handleRotationClick]
+      ]
     }
 
     // Remove event listeners for currently active tool
@@ -181,7 +163,16 @@ function attachToolbarEventListeners(hypCanvas) {
     // Update hypCanvas and reset the toolbar
     hypCanvas.activeTool = e.target.value;
     if (hypCanvas.activeTool !== 'clickDrag') {
-      unselectAllShapes(hypCanvas);
+      if (hypCanvas.selected) {
+        unselectAllShapes(hypCanvas);
+      }
+      if (hypCanvas.transforming) {
+        hypCanvas.transforming = false;
+        hypCanvas.lastTimestamp = null;
+      }
+      // if (hypCanvas.activeTool !== 'rotate') {
+      //   hypCanvas.centerOfRotation = null;
+      // }
     }
     resetToolBar(hypCanvas);
 
@@ -508,5 +499,25 @@ function attachEditButtonsEventListeners(hypCanvas) {
     drawAll(hypCanvas);
   });
 }
-
 //#endregion
+
+// NOT WORKING, SKIPPING FOR NOW
+// function attachWindowEventListener() {
+//   // Window resize handler
+//   function preventSmallWindow() {
+//     // Get the content width and height
+//     const contentWidth = document.body.scrollWidth || document.documentElement.scrollWidth;
+//     const contentHeight = document.body.scrollHeight || document.documentElement.scrollHeight;
+
+//     // Resize the window if the width or height get too small
+//     const windowWidth = window.innerWidth
+//     const windowHeight = window.innerHeight;
+//     if (windowWidth < contentWidth || windowHeight < contentHeight) {
+//       window.resizeTo(contentWidth, contentHeight);
+//     }
+//   }
+
+//   // Attach resize event listener
+//   window.addEventListener('resize', preventSmallWindow);
+//   preventSmallWindow();
+// }

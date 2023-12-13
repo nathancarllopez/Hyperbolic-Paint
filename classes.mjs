@@ -60,11 +60,12 @@ class HypCanvas {
       this.lineWidth = 2;
       this.anchorSize = 5;
 
-      const centerOfRotation = Point.randPoint().scale(this.radius);
-      centerOfRotation.fillStyle = 'red';
+      // const centerOfRotation = Point.randPoint().scale(this.radius);
+      // centerOfRotation.fillStyle = 'red';
 
       this.shapes = {
-        clickedPoints: [centerOfRotation],
+        // clickedPoints: [centerOfRotation],
+        clickedPoints: [],
         lines: [],
         polygons: [genRandomTriangle(this), genRandomTriangle(this)],
         // polygons: []
@@ -82,8 +83,8 @@ class HypCanvas {
       // Animation variables
       this.transforming = false;
       this.lastTimestamp = null;
-      this.transformSpeed = 0.002;
-      this.centerOfRotation = centerOfRotation;
+      this.transformSpeed = 0.001;
+      this.centerOfRotation = null;
     }
   };
 }
@@ -113,6 +114,29 @@ class Point {
     }
   }
 
+  draw(hypCanvas, drawAnchor = true) {
+    // Prepare the label
+    const ctx = hypCanvas.ctx;
+    const xLabel = Math.round(100 * (this.x/hypCanvas.radius))/100;
+    const yLabel = Math.round(100 * (this.y/hypCanvas.radius))/100;
+    // const xLabel = Math.round(100 * (this.x))/100;
+    // const yLabel = Math.round(100 * (this.y))/100;
+    const label = `(${xLabel}, ${yLabel})`;
+
+    // Draw the point
+    ctx.fillStyle = this.fillStyle;
+    const anchorSize = this.anchorSize;
+    if (drawAnchor) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, anchorSize, 0, 7);
+      ctx.fill();
+    }
+    ctx.font = '14px serif'
+    ctx.scale(1, -1);
+    ctx.fillText(label, this.x + anchorSize, -(this.y + anchorSize));
+    ctx.scale(1, -1);
+  }
+
   pointClicked(mouseX, mouseY) {
     return (mouseX - this.x)**2 + (mouseY - this.y)**2 < this.anchorSize**2;
   }
@@ -136,29 +160,6 @@ class Point {
     } while (re**2 + im**2 > 1);
     return new Point(re, im)
   };
-  
-  draw(hypCanvas, drawAnchor = true) {
-    // Prepare the label
-    const ctx = hypCanvas.ctx;
-    const xLabel = Math.round(100 * (this.x/hypCanvas.radius))/100;
-    const yLabel = Math.round(100 * (this.y/hypCanvas.radius))/100;
-    // const xLabel = Math.round(100 * (this.x))/100;
-    // const yLabel = Math.round(100 * (this.y))/100;
-    const label = `(${xLabel}, ${yLabel})`;
-
-    // Draw the point
-    ctx.fillStyle = this.fillStyle;
-    const anchorSize = this.anchorSize;
-    if (drawAnchor) {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, anchorSize, 0, 7);
-      ctx.fill();
-    }
-    ctx.font = '14px serif'
-    ctx.scale(1, -1);
-    ctx.fillText(label, this.x + anchorSize, -(this.y + anchorSize));
-    ctx.scale(1, -1);
-  }
 
   isOnADiameterWith(that, error = 0) {
     // Reject if both points are zero

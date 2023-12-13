@@ -63,7 +63,7 @@
 
       <!-- DRAWING TOOLS -->
       <div>
-        <h3>Drawing Tools</h3>
+        <h3>Tools</h3>
     
         <!-- CLICK AND DRAG -->
         <input type="radio" id="clickDrag" name="tools" value="clickDrag" checked>
@@ -80,21 +80,21 @@
         <!-- DRAW POLYGONS -->
         <input type="radio" id="polygon" name="tools" value="polygon">
         <label for="polygon"></label><br>
+
+        <!-- ROTATIONS -->
+        <input type="radio" id="rotate" name="tools" value="rotate">
+        <label for="rotate"></label><br>
       </div>  
 
       <!-- TRANSFORMATIONS -->
       <div>
-        <h3>Transformations</h3>
+        <h3>Controls</h3>
 
         <!-- TRANSFORMATION CONTROLS -->
         <button id="play" class="transformButton">&#9654; Play</button>
         <button id="pause" class="transformButton">&#9208; Pause</button>
-        <input type="range" min="-100" max="100" value="20" class="speed" id="speed">
+        <input type="range" min="-100" max="100" value="10" class="speed" id="speed">
         <label for="speed"></label><br>
-  
-        <!-- ROTATIONS -->
-        <input type="radio" id="rotate" name="transforms" value="rotate" checked>
-        <label for="rotate"></label><br>
       </div>
 
       <!-- COLOR SELECTOR -->
