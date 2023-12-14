@@ -34,18 +34,6 @@ function createHypCanvas(oldCanvas = {}) {
   return hypCanvas
 }
 
-// function testGetEndpoints() {
-//   const hypCanvas = createHypCanvas()
-//   const triangle = genRandomTriangle(hypCanvas);
-//   for (const edge of triangle.edges) {
-//     const edgeEndpoints = edge.getEndpoints();
-//     for (const endpoint of edgeEndpoints) {
-//       console.log(endpoint);
-//     }
-//   }
-// }
-// testGetEndpoints();
-
 function attachDefaultEventListeners(hypCanvas) {
   // Window resize event listener
   // NOT WORKING, SKIPPING FOR NOW
@@ -286,6 +274,14 @@ function attachTransformControlsEventListeners(hypCanvas) {
   playButton.addEventListener('click', () => {
     const transformShapePlaced = hypCanvas.centerOfRotation || hypCanvas.axisOfTranslation;
     if (transformShapePlaced) {
+      if (hypCanvas.centerOfRotation) {
+        hypCanvas.centerOfRotation.fillStyle = 'purple';
+      } else {
+        hypCanvas.axisOfTranslation.axis.strokeStyle = 'purple';
+        for (const anchor of hypCanvas.axisOfTranslation.axis.anchors) {
+          anchor.fillStyle = 'purple';
+        }
+      }
       hypCanvas.transforming = true;
       hypCanvas.activeTransform = hypCanvas.centerOfRotation ?
         'rotate' :
@@ -303,6 +299,8 @@ function attachTransformControlsEventListeners(hypCanvas) {
       hypCanvas.transforming = false;
       hypCanvas.activeTransform = null;
       hypCanvas.lastTimestamp = null;
+      unselectAllShapes(hypCanvas);
+      drawAll(hypCanvas);
     } else {
       alert('Not currently transforming.')
     }

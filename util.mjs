@@ -31,18 +31,19 @@ function unselectAllShapes(hypCanvas) {
   }
 
   // Unselect center of rotation
-  if (hypCanvas.centerOfRotation && hypCanvas.centerOfRotation.selected) {
+  if (hypCanvas.centerOfRotation && !hypCanvas.transforming) {
     hypCanvas.centerOfRotation.selected = false;
+    hypCanvas.centerOfRotation.fillStyle = 'fuchsia';
   }
 
   // Unselect axis of translation
-  if (hypCanvas.axisOfTranslation) {
+  if (hypCanvas.axisOfTranslation && !hypCanvas.transforming) {
     const axis = hypCanvas.axisOfTranslation.axis;
-    if (axis.selected) {
-      axis.selected = false;
-      for (const anchor of axis.anchors) {
-        anchor.selected = false;
-      }
+    axis.selected = false;
+    axis.strokeStyle = 'fuchsia';
+    for (const anchor of axis.anchors) {
+      anchor.selected = false;
+      anchor.fillStyle = 'fuchsia';
     }
   }
 }

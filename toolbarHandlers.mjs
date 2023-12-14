@@ -25,9 +25,6 @@ function clickDragDown(e, hypCanvas) {
       unselectAllShapes(hypCanvas);
     }
 
-    // Create an array to hold the selected shape(s)
-    // const selectedShapes = [];
-
     // Check if a line was selected
     for (const line of shapes.lines) {
       for (const anchor of line.anchors) {
@@ -35,7 +32,6 @@ function clickDragDown(e, hypCanvas) {
           anchor.selected = true;
           anchor.fillStyle = 'black';
           line.selected = true;
-          // selectedShapes.push(line);
           hypCanvas.selected = true;
           break;
         }
@@ -60,7 +56,6 @@ function clickDragDown(e, hypCanvas) {
         // Once we've found two selected edges, stop searching this polygon
         if (numSelectedEdges === 2) {
           polygon.selected = true;
-          // selectedShapes.push(polygon);
           hypCanvas.selected = true;
           break;
         }
@@ -71,6 +66,7 @@ function clickDragDown(e, hypCanvas) {
     if (hypCanvas.centerOfRotation) {
       if (hypCanvas.centerOfRotation.pointClicked(mouseX, mouseY)) {
         hypCanvas.centerOfRotation.selected = true;
+        hypCanvas.centerOfRotation.fillStyle = 'purple';
         hypCanvas.selected = true;
       }
     }
@@ -78,14 +74,33 @@ function clickDragDown(e, hypCanvas) {
     // Check if the axis of translation was selected
     if (hypCanvas.axisOfTranslation) {
       const axis = hypCanvas.axisOfTranslation.axis;
-      for (const anchor of axis.anchors) {
-        if (anchor.pointClicked(mouseX, mouseY)) {
-          anchor.selected = true;
-          axis.selected = true;
-          hypCanvas.selected = true;
-          break;
-        }
+      const anchor1 = axis.anchor1;
+      const anchor2 = axis.anchor2;
+      let axisClicked = true;
+
+      if (anchor1.pointClicked(mouseX, mouseY)) {
+        anchor1.selected = true;
+        anchor1.fillStyle = 'purple';
+        anchor2.selected = false;
+      } else if (anchor2.pointClicked(mouseX, mouseY)) {
+        anchor2.selected = true;
+        anchor2.fillStyle = 'purple';
+        anchor1.selected = false;
+      } else {
+        axisClicked = false;
       }
+      axis.selected = axisClicked;
+      hypCanvas.selected = axisClicked;
+
+      // for (const anchor of axis.anchors) {
+      //   if (anchor.pointClicked(mouseX, mouseY)) {
+      //     anchor.selected = true;
+      //     anchor.fillStyle = 'purple';
+      //     axis.selected = true;
+      //     hypCanvas.selected = true;
+      //     break;
+      //   }
+      // }
     }
 
     // If a shape was clicked...
@@ -291,7 +306,7 @@ function rotateClick(e, hypCanvas) {
 
     // Update the center of rotation
     hypCanvas.centerOfRotation = new Point(mouseX, mouseY);
-    hypCanvas.centerOfRotation.fillStyle = 'red';
+    hypCanvas.centerOfRotation.fillStyle = 'fuchsia';
 
     // Redraw the canvas
     drawAll(hypCanvas);
@@ -314,15 +329,17 @@ function translateClick(e, hypCanvas) {
     hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
 
     // Add clicked point to shapes.clickedPoints
-    hypCanvas.shapes.clickedPoints.push(new Point(mouseX, mouseY));
+    const clicked = new Point(mouseX, mouseY)
+    clicked.fillStyle = 'fuchsia';
+    hypCanvas.shapes.clickedPoints.push(clicked);
 
     // If two points have been clicked, create a new line
     if (hypCanvas.shapes.clickedPoints.length == 2) {
       // Create the axis of translation and color it red
       const axisOfTranslation = new Line(hypCanvas, ...hypCanvas.shapes.clickedPoints);
-      axisOfTranslation.strokeStyle = 'red';
+      axisOfTranslation.strokeStyle = 'fuchsia';
       axisOfTranslation.anchors.forEach(
-        anchor => anchor.fillStyle = 'red'
+        anchor => anchor.fillStyle = 'fuchsia'
       );
 
       // Add the axis of translation and the first clicked points to hypCanvas
