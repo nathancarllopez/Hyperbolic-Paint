@@ -615,6 +615,12 @@ function attachEditButtonsEventListeners(hypCanvas) {
       for (const shapeType in hypCanvas.shapes) {
         hypCanvas.shapes[shapeType] = hypCanvas.shapes[shapeType].filter(shape => !shape.selected);
       }
+      if (hypCanvas.centerOfRotation && hypCanvas.centerOfRotation.selected) {
+        hypCanvas.centerOfRotation = null;
+      }
+      if (hypCanvas.axisOfTranslation && hypCanvas.axisOfTranslation.axis.selected) {
+        hypCanvas.axisOfTranslation = null;
+      }
       drawAll(hypCanvas);
     } else {
       alert('Select a shape first to delete it.')
