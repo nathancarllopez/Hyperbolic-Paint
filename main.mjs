@@ -269,11 +269,16 @@ function attachTransformControlsEventListeners(hypCanvas) {
     requestAnimationFrame(activeTransform);
   }
 
-  // Play button
-  const playButton = document.querySelector('#play');
-  playButton.addEventListener('click', () => {
+  // Button appearance handler
+  function startAndStop(e, hypCanvas) {
+    // Get the button and its current text
+    const playPauseButton = e.target;
+    const currentButtonText = playPauseButton.textContent;
+
+    // Case 1: If a center of rotation or axis of translation has been placed, start transforming
+    let changeButtonText = true;
     const transformShapePlaced = hypCanvas.centerOfRotation || hypCanvas.axisOfTranslation;
-    if (transformShapePlaced) {
+    if (transformShapePlaced && !hypCanvas.transforming) {
       if (hypCanvas.centerOfRotation) {
         hypCanvas.centerOfRotation.fillStyle = 'purple';
       } else {
@@ -287,24 +292,40 @@ function attachTransformControlsEventListeners(hypCanvas) {
         'rotate' :
         'translate';
       runTransformation(hypCanvas);
-    } else {
-      alert('Choose a center of rotation or axis of translation to start transforming.')
     }
-  });
 
-  // Pause button
-  const pauseButton = document.querySelector('#pause');
-  pauseButton.addEventListener('click', () => {
-    if (hypCanvas.transforming) {
+    // Case 2: If we're already transforming, stop transforming
+    else if (hypCanvas.transforming) {
       hypCanvas.transforming = false;
       hypCanvas.activeTransform = null;
       hypCanvas.lastTimestamp = null;
       unselectAllShapes(hypCanvas);
       drawAll(hypCanvas);
-    } else {
-      alert('Not currently transforming.')
     }
-  });
+
+    // If neither Case 1 or 2 holds, do not change the button and alert the user
+    else {
+      let alertText;
+      if (!transformShapePlaced) {
+        alertText = 'Choose a center of rotation or axis of translation to start transforming.'
+      } else if (!hypCanvas.transforming) {
+        alertText = 'Nothing to stop!'
+      }
+      alert(alertText);
+      changeButtonText = false;
+    }
+
+    // Update button text if Case 1 or Case 2 occurred
+    if (changeButtonText) {
+      playPauseButton.textContent = currentButtonText === 'Start transforming' ?
+        "Stop transforming" :
+        "Start transforming";
+    }
+  }
+
+  // Start/Stop button
+  const playPauseButton = document.querySelector('#playPause');
+  playPauseButton.addEventListener('click', e => startAndStop(e, hypCanvas));
 
   // Transform speed
   const speedRange = document.querySelector('#speed');
