@@ -307,7 +307,7 @@ function attachTransformControlsEventListeners(hypCanvas) {
     else {
       let alertText;
       if (!transformShapePlaced) {
-        alertText = 'Choose a center of rotation or axis of translation to start transforming.'
+        alertText = 'Nothing to start!'
       } else if (!hypCanvas.transforming) {
         alertText = 'Nothing to stop!'
       }
