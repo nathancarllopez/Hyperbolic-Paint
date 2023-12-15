@@ -5,93 +5,6 @@ function getCanvasCoord(e, hypCanvas) {
   ];
 }
 
-function unselectAllShapes(hypCanvas) {
-  // Clear out selected shapes array
-  hypCanvas.selected = false;
-
-  // Unselect lines
-  for (const line of hypCanvas.shapes.lines) {
-    line.selected = false;
-    for (const anchor of line.anchors) {
-      anchor.selected = false;
-      anchor.fillStyle = 'gray';
-    }
-  }
-
-  // Unselect polygons
-  for (const polygon of hypCanvas.shapes.polygons) {
-    polygon.selected = false;
-    for (const edge of polygon.edges) {
-      edge.selected = false;
-      for (const anchor of edge.anchors) {
-        anchor.selected = false;
-        anchor.fillStyle = 'gray';
-      }
-    }
-  }
-
-  // Unselect center of rotation
-  if (hypCanvas.centerOfRotation && !hypCanvas.transforming) {
-    hypCanvas.centerOfRotation.selected = false;
-    hypCanvas.centerOfRotation.fillStyle = 'fuchsia';
-  }
-
-  // Unselect axis of translation
-  if (hypCanvas.axisOfTranslation && !hypCanvas.transforming) {
-    const axis = hypCanvas.axisOfTranslation.axis;
-    axis.selected = false;
-    axis.strokeStyle = 'fuchsia';
-    for (const anchor of axis.anchors) {
-      anchor.selected = false;
-      anchor.fillStyle = 'fuchsia';
-    }
-  }
-}
-
-function adjustDraggingShapes(shapeArray, changeX, changeY) {
-  // Adjust selected shapes
-  const newShapes = {}
-  for (let index = 0; index < shapeArray.length; index++) {
-    const shape = shapeArray[index];
-    if (shape.selected) {
-      newShapes[index] = shape.recalculatePosition(changeX, changeY);
-    }
-  }
-
-  // Update shapeArray
-  if (Object.keys(newShapes).length > 0) {
-    for (const index in newShapes) {
-      shapeArray[index] = newShapes[index];
-    }
-  }
-}
-
-function deepCopyShapes(shapes) {
-  // Create an empty object as a copy
-  const deepCopy = {
-    lines: [],
-    polygons: [],
-    clickedPoints: [],
-  };
-
-  // Copy the lines
-  for (const line of shapes.lines) {
-    deepCopy.lines.push(line.recalculatePosition(0, 0))
-  }
-
-  // Copy the polygons
-  for (const polygon of shapes.polygons) {
-    deepCopy.polygons.push(polygon.recalculatePosition(0, 0));
-  }
-
-  // Copy the clicked points
-  for (const clicked of shapes.clickedPoints) {
-    deepCopy.clickedPoints.push(clicked.recalculatePosition(0, 0));
-  }
-
-  return deepCopy;
-}
-
 function getRadioButtonValue(name) {
   // Get all radio buttons with name
   const radioButtons = document.getElementsByName(name);
@@ -143,12 +56,18 @@ function resetToolBar(hypCanvas) {
   }
 }
 
+function switchPlayPauseButtonText() {
+  const playPauseButton = document.querySelector('#playPause');
+  const currentButtonText = playPauseButton.textContent;
+  playPauseButton.textContent = currentButtonText === "Play" ?
+    "Pause" :
+    "Play";
+}
+
 export {
   getCanvasCoord,
-  unselectAllShapes,
-  adjustDraggingShapes,
-  deepCopyShapes,
   getRadioButtonValue,
   removeBorder,
-  resetToolBar
+  resetToolBar,
+  switchPlayPauseButtonText
 }

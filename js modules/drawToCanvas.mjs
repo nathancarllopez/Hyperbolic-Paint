@@ -35,14 +35,9 @@ function drawShapes(hypCanvas) {
     shapeArray.forEach(shape => shape.draw(hypCanvas));
   }
   
-  // Draw the center of rotation
-  if (hypCanvas.centerOfRotation) {
-    hypCanvas.centerOfRotation.draw(hypCanvas);
-  }
-
-  // Draw the axis of translation
-  if (hypCanvas.axisOfTranslation) {
-    hypCanvas.axisOfTranslation.axis.draw(hypCanvas);
+  // Draw the transform shape
+  if (hypCanvas.transformShape) {
+    hypCanvas.transformShape.draw(hypCanvas); 
   }
 }
 

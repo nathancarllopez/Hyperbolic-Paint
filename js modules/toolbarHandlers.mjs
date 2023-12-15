@@ -1,8 +1,4 @@
-import { 
-  getCanvasCoord,
-  unselectAllShapes,
-  deepCopyShapes,
-  adjustDraggingShapes } from "./util.mjs";
+import { getCanvasCoord } from "./util.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
 import { Point, Line, Polygon } from "./geometryClasses.mjs";
 
@@ -14,130 +10,45 @@ function clickDragDown(e, hypCanvas) {
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
 
-  // Get the shapes object
-  const shapes = hypCanvas.shapes;
-
   // If cursor is inside boundary...
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
-    // Clear out any previously selected shapes
+    // Find all selected shapes
+    hypCanvas.findSelectedShapes(mouseX, mouseY);
+
+    // If a shape was clicked, prepare to drag it
+    let updateAndSave = false;
     if (hypCanvas.selected) {
-      unselectAllShapes(hypCanvas);
+      updateAndSave = true;
+      hypCanvas.dragging = true;
     }
 
-    // Check if a line was selected
-    for (const line of shapes.lines) {
-      for (const anchor of line.anchors) {
-        if (anchor.pointClicked(mouseX, mouseY)) {
-          anchor.selected = true;
-          anchor.fillStyle = 'black';
-          line.selected = true;
-          hypCanvas.selected = true;
-          break;
-        }
-      }
+    // Otherwise, prepare to translate the plane
+    else {
+      // updateAndSave = true;
+      // hypCanvas.moving = true;
     }
 
-    // Check if a polygon was selected
-    for (const polygon of shapes.polygons) {
-      let numSelectedEdges = 0;
-      for (const edge of polygon.edges) {
-        // Search the anchors of this edge
-        for (const anchor of edge.anchors) {
-          if (anchor.pointClicked(mouseX, mouseY)) {
-            anchor.selected = true;
-            anchor.fillStyle = 'black';
-            edge.selected = true;
-            numSelectedEdges++;
-            break;
-          }
-        }
-
-        // Once we've found two selected edges, stop searching this polygon
-        if (numSelectedEdges === 2) {
-          polygon.selected = true;
-          hypCanvas.selected = true;
-          break;
-        }
-      }
-    }
-
-    // Check if the center of rotation was selected
-    if (hypCanvas.centerOfRotation) {
-      if (hypCanvas.centerOfRotation.pointClicked(mouseX, mouseY)) {
-        hypCanvas.centerOfRotation.selected = true;
-        hypCanvas.centerOfRotation.fillStyle = 'purple';
-        hypCanvas.selected = true;
-      }
-    }
-
-    // Check if the axis of translation was selected
-    if (hypCanvas.axisOfTranslation) {
-      const axis = hypCanvas.axisOfTranslation.axis;
-      const anchor1 = axis.anchor1;
-      const anchor2 = axis.anchor2;
-      let axisClicked = true;
-
-      if (anchor1.pointClicked(mouseX, mouseY)) {
-        anchor1.selected = true;
-        anchor1.fillStyle = 'purple';
-        anchor2.selected = false;
-      } else if (anchor2.pointClicked(mouseX, mouseY)) {
-        anchor2.selected = true;
-        anchor2.fillStyle = 'purple';
-        anchor1.selected = false;
-      } else {
-        axisClicked = false;
-      }
-      axis.selected = axisClicked;
-      hypCanvas.selected = axisClicked;
-
-      // for (const anchor of axis.anchors) {
-      //   if (anchor.pointClicked(mouseX, mouseY)) {
-      //     anchor.selected = true;
-      //     anchor.fillStyle = 'purple';
-      //     axis.selected = true;
-      //     hypCanvas.selected = true;
-      //     break;
-      //   }
-      // }
-    }
-
-    // If a shape was clicked...
-    if (hypCanvas.selected) {
-      // Update start position
+    if (updateAndSave) {
       hypCanvas.startX = mouseX;
       hypCanvas.startY = mouseY;
-
-      // Turn on dragging flag
-      hypCanvas.dragging = true;
-
-      // Save a copy of current shapes
-      hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
-    }
-
-    // Otherwise, unselect all shapes
-    else {
-      if (hypCanvas.selected) {
-        unselectAllShapes(hypCanvas);
-      }
+      hypCanvas.saveCurrentShapes();
     }
   }
 
   // Otherwise, unselect all shapes
   else {
     if (hypCanvas.selected) {
-      unselectAllShapes(hypCanvas);
+      hypCanvas.unselectAllShapes();
     }
   }
 
   // Redraw the canvas
   drawAll(hypCanvas);
-
 }
 
 function clickDragMove(e, hypCanvas) {
-  // Only proceed if a shape is being dragged
+  // Case 1: A shape is being dragged
   if (hypCanvas.dragging) {
     // Get canvas coordinates
     const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
@@ -145,41 +56,13 @@ function clickDragMove(e, hypCanvas) {
     // Adjust shapes if inside boundary
     const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
     if (cursorInside) {
-      // Turn on shapes moved flag
-      hypCanvas.shapesMoved = true;
-
-      // Calculate movement
-      const changeX = mouseX - hypCanvas.startX;
-      const changeY = mouseY - hypCanvas.startY;
-      hypCanvas.startX = mouseX;
-      hypCanvas.startY = mouseY;
-      
-      // Adjust dragging lines
-      adjustDraggingShapes(hypCanvas.shapes.lines, changeX, changeY);
-
-      // Adjust dragging polygons
-      adjustDraggingShapes(hypCanvas.shapes.polygons, changeX, changeY);
-
-      // Adjust dragging center of rotation
-      if (hypCanvas.centerOfRotation) {
-        if (hypCanvas.centerOfRotation.selected) {
-          hypCanvas.centerOfRotation = hypCanvas.centerOfRotation.recalculatePosition(changeX, changeY);
-        }
-      }
-
-      // Adjust dragging axis of translation
-      if (hypCanvas.axisOfTranslation) {
-        const axis = hypCanvas.axisOfTranslation.axis;
-        if (axis.selected) {
-          hypCanvas.axisOfTranslation.axis = axis.recalculatePosition(changeX, changeY)
-        }
-      }
+      hypCanvas.adjustDraggingShapes(mouseX, mouseY)
     }
 
     // Otherwise, reset shapes and turn off dragging flag
     else {
       if (hypCanvas.selected) {
-        unselectAllShapes(hypCanvas);
+        hypCanvas.unselectAllShapes();
       }
       hypCanvas.dragging = false;
     }
@@ -187,6 +70,9 @@ function clickDragMove(e, hypCanvas) {
     // Redraw the canvas
     drawAll(hypCanvas);
   }
+
+  // Case 2: The plane is being moved
+  // else if (hypCanvas.moving) {}
 }
 
 function clickDragUp(e, hypCanvas) {
@@ -209,14 +95,9 @@ function clickDragUp(e, hypCanvas) {
 }
 
 function lineClick(e, hypCanvas) {
-  // Remove center of rotation
-  if (hypCanvas.centerOfRotation) {
-    hypCanvas.centerOfRotation = null;
-  }
-
-  // Remove axis of translation
-  if (hypCanvas.axisOfTranslation) {
-    hypCanvas.axisOfTranslation = null;
+  // Remove transform shape
+  if (hypCanvas.transformShape) {
+    hypCanvas.transformShape = null;
   }
 
   // Get canvas coordinates
@@ -226,7 +107,7 @@ function lineClick(e, hypCanvas) {
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
     // Save a copy of the current shapes
-    hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+    hypCanvas.saveCurrentShapes();
 
     // Add clicked point to shapes.clickedPoints
     hypCanvas.shapes.clickedPoints.push(new Point(mouseX, mouseY));
@@ -243,14 +124,9 @@ function lineClick(e, hypCanvas) {
 }
 
 function polygonClick(e, hypCanvas) {
-  // Remove center of rotation
-  if (hypCanvas.centerOfRotation) {
-    hypCanvas.centerOfRotation = null;
-  }
-
-  // Remove axis of translation
-  if (hypCanvas.axisOfTranslation) {
-    hypCanvas.axisOfTranslation = null;
+  // Remove transform shape
+  if (hypCanvas.transformShape) {
+    hypCanvas.transformShape = null;
   }
 
   // Get canvas coordinates
@@ -260,7 +136,7 @@ function polygonClick(e, hypCanvas) {
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
     // Save a copy of the current shapes
-    hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+    hypCanvas.saveCurrentShapes();
 
     // Add clicked point to shapes.clickedPoints
     hypCanvas.shapes.clickedPoints.push(new Point(mouseX, mouseY));
@@ -290,9 +166,9 @@ function polygonClick(e, hypCanvas) {
  */
 //#region
 function rotateClick(e, hypCanvas) {
-  // Remove axis of translation
-  if (hypCanvas.axisOfTranslation) {
-    hypCanvas.axisOfTranslation = null;
+  // Remove transform shape
+  if (hypCanvas.transformShape) {
+    hypCanvas.transformShape = null;
   }
 
   // Get canvas coordinates
@@ -302,11 +178,11 @@ function rotateClick(e, hypCanvas) {
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
     // Save a copy of the current shapes
-    hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+    hypCanvas.saveCurrentShapes();
 
     // Update the center of rotation
-    hypCanvas.centerOfRotation = new Point(mouseX, mouseY);
-    hypCanvas.centerOfRotation.fillStyle = 'fuchsia';
+    hypCanvas.transformShape = new Point(mouseX, mouseY);
+    hypCanvas.transformShape.fillStyle = 'fuchsia';
 
     // Redraw the canvas
     drawAll(hypCanvas);
@@ -314,9 +190,9 @@ function rotateClick(e, hypCanvas) {
 }
 
 function translateClick(e, hypCanvas) {
-  // Remove center of rotation
-  if (hypCanvas.centerOfRotation) {
-    hypCanvas.centerOfRotation = null;
+  // Remove transform shape
+  if (hypCanvas.transformShape) {
+    hypCanvas.transformShape = null;
   }
   
   // Get canvas coordinates
@@ -326,7 +202,7 @@ function translateClick(e, hypCanvas) {
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
     // Save a copy of the current shapes
-    hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+    hypCanvas.saveCurrentShapes();
 
     // Add clicked point to shapes.clickedPoints
     const clicked = new Point(mouseX, mouseY)
@@ -335,18 +211,15 @@ function translateClick(e, hypCanvas) {
 
     // If two points have been clicked, create a new line
     if (hypCanvas.shapes.clickedPoints.length == 2) {
-      // Create the axis of translation and color it red
+      // Create the axis of translation
       const axisOfTranslation = new Line(hypCanvas, ...hypCanvas.shapes.clickedPoints);
       axisOfTranslation.strokeStyle = 'fuchsia';
       axisOfTranslation.anchors.forEach(
         anchor => anchor.fillStyle = 'fuchsia'
       );
 
-      // Add the axis of translation and the first clicked points to hypCanvas
-      hypCanvas.axisOfTranslation = {
-        axis: axisOfTranslation,
-        firstPoint: hypCanvas.shapes.clickedPoints[0]
-      }
+      // Add the axis of translation to hypCanvas
+      hypCanvas.transformShape = axisOfTranslation;
 
       // Clear out the clicked points
       hypCanvas.shapes.clickedPoints.length = 0;

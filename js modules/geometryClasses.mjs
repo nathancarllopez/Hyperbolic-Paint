@@ -31,13 +31,15 @@ class HypCanvas {
 
       // Initialize shapes and cursor
       this.shapes = oldCanvas.shapes;
-      this.shapeHistory = oldCanvas.shapeHistory;
+      this.transformShape = oldCanvas.transformShape;
       this.cursor = oldCanvas.cursor;
+      this.shapeHistory = oldCanvas.shapeHistory;
 
       // Drawing variables
       this.selected = oldCanvas.selected;
       this.dragging = oldCanvas.dragging;
       this.shapesMoved = oldCanvas.shapesMoved;
+      this.moving = oldCanvas.moving;
       this.startX = oldCanvas.startX;
       this.startY = oldCanvas.startY;
 
@@ -61,18 +63,22 @@ class HypCanvas {
       this.globalAlpha = 0.5;
       this.anchorSize = 5;
 
+      // Things to draw
       this.shapes = {
         clickedPoints: [],
         lines: [],
         polygons: [genRandomTriangle(this)],
+        // freeDraw: [],
       };
-      this.shapeHistory = [];
+      this.transformShape = null;
       this.cursor = { display: false};
+      this.shapeHistory = [];
 
       // Drawing variables
       this.selected = false;
       this.dragging = false;
       this.shapesMoved = false;
+      this.moving = false;
       this.startX = null;
       this.startY = null;
 
@@ -81,10 +87,198 @@ class HypCanvas {
       this.activeTransform = null;
       this.lastTimestamp = null;
       this.transformSpeed = 0.0001;
-      this.centerOfRotation = null;
-      this.axisOfTranslation = null;
+      // this.centerOfRotation = null;
+      // this.axisOfTranslation = null;
     }
-  };
+  }
+
+  findSelectedShapes(mouseX, mouseY) {
+    // Clear out any previously selected shapes
+    if (this.selected) {
+      this.unselectAllShapes();
+    }
+
+    // Lines
+    for (const line of this.shapes.lines) {
+      for (const anchor of line.anchors) {
+        if (anchor.pointClicked(mouseX, mouseY)) {
+          anchor.selected = true;
+          anchor.fillStyle = 'black';
+          line.selected = true;
+          this.selected = true;
+          break;
+        }
+      }
+    }
+
+    // Polygons
+    for (const polygon of this.shapes.polygons) {
+      let numSelectedEdges = 0;
+      for (const edge of polygon.edges) {
+        for (const anchor of edge.anchors) {
+          if (anchor.pointClicked(mouseX, mouseY)) {
+            anchor.selected = true;
+            anchor.fillStyle = 'black';
+            edge.selected = true;
+            numSelectedEdges++;
+            break;
+          }
+        }
+
+        if (numSelectedEdges === 2) {
+          polygon.selected = true;
+          this.selected = true;
+          break;
+        }
+      }
+    }
+
+    // Free drawings
+    // TO DO
+
+    // Transform shapes
+    if (this.transformShape) {
+      // Center of rotation
+      if (this.transformShape instanceof Point) {
+        if (this.transformShape.pointClicked(mouseX, mouseY)) {
+          this.transformShape.selected = true;
+          this.transformShape.fillStyle = 'purple';
+          this.selected = true;
+        }
+      }
+
+      // Axis of translation
+      else if (this.transformShape instanceof Line) {
+        const anchor1 = this.transformShape.anchor1;
+        const anchor2 = this.transformShape.anchor2;
+        let axisClicked = true;
+        if (anchor1.pointClicked(mouseX, mouseY)) {
+          anchor1.selected = true;
+          anchor1.fillStyle = 'purple';
+          anchor2.selected = false;
+        } else if (anchor2.pointClicked(mouseX, mouseY)) {
+          anchor2.selected = true;
+          anchor2.fillStyle = 'purple';
+          anchor1.selected = false;
+        } else {
+          axisClicked = false;
+        }
+        this.transformShape.selected = axisClicked;
+        this.selected = axisClicked;
+      }
+    }
+  }
+
+  unselectAllShapes() {
+    // Turn off selected flag
+    this.selected = false;
+
+    // Unselect lines
+    for (const line of this.shapes.lines) {
+      line.selected = false;
+      for (const anchor of line.anchors) {
+        anchor.selected = false;
+        anchor.fillStyle = 'gray';
+      }
+    }
+
+    // Unselect polygons
+    for (const polygon of this.shapes.polygons) {
+      polygon.selected = false;
+      for (const edge of polygon.edges) {
+        edge.selected = false;
+        for (const anchor of edge.anchors) {
+          anchor.selected = false;
+          anchor.fillStyle = 'gray';
+        }
+      }
+    }
+
+    // Unselect free drawings
+    // TO DO
+
+    // Unselect transform shapes
+    if (this.transformShape && !this.transforming) {
+      // Center of rotation
+      if (this.transformShape instanceof Point) {
+        this.transformShape.selected = false;
+        this.transformShape.fillStyle = 'fuchsia';
+      }
+
+      // Axis of translation
+      else if (this.transformShape instanceof Line) {
+        this.transformShape.selected = false;
+        this.transformShape.strokeStyle = 'fuchsia';
+        for (const anchor of this.transformShape.anchors) {
+          anchor.selected = false;
+          anchor.fillStyle = 'fuchsia';
+        }
+      }
+    }
+  }
+
+  saveCurrentShapes() {
+    // Create an empty object to copy to
+    const shapesCopy = {
+      shapes: {
+        clickedPoints: [],
+        lines: [],
+        polygons: [],
+        // freeDraw: [],
+      },
+      transformShape: null
+    };
+
+    // Add copies of each shape to the empty object
+    for (const [shapeType, shapeArray] of Object.entries(this.shapes)) {
+      for (const shape of shapeArray) {
+        shapesCopy.shapes[shapeType].push(shape.recalculatePosition(0, 0));
+      }
+    }
+
+    // Copy the transform shape
+    if (this.transformShape) {
+      shapesCopy.transformShape = this.transformShape.recalculatePosition(0, 0);
+    }
+
+    // Add the copy to the shape history
+    this.shapeHistory.push(shapesCopy);
+  }
+
+  adjustDraggingShapes(mouseX, mouseY) {
+    // Turn on shapes moved flag
+    this.shapesMoved = true;
+
+    // Calculate movement and update start position
+    const changeX = mouseX - this.startX;
+    const changeY = mouseY - this.startY;
+    this.startX = mouseX;
+    this.startY = mouseY;
+
+    // Drag all the selected shapes
+    for (const shapeArray of Object.values(this.shapes)) {
+      // Create adjusted copies of the selected shapes
+      const adjShapes = {};
+      for (let index = 0; index < shapeArray.length; index++) {
+        const shape = shapeArray[index];
+        if (shape.selected) {
+          adjShapes[index] = shape.recalculatePosition(changeX, changeY);
+        }
+      }
+
+      // Update the shape array
+      if (Object.keys(adjShapes).length > 0) {
+        for (const index in adjShapes) {
+          shapeArray[index] = adjShapes[index];
+        }
+      }
+    }
+
+    // Drag the transform shape if it is selected
+    if (this.transformShape && this.transformShape.selected) {
+      this.transformShape = this.transformShape.recalculatePosition(changeX, changeY);
+    }
+  }
 }
 
 class Point {
@@ -189,15 +383,11 @@ class Point {
       throw "No unique diameter through zero"
     }
 
-    // Normalize so length = canvas radius
+    // Normalize so modulus is equal to the canvas radius
     const normThis = this.scale(hypCanvas.radius/this.modulus);
     const oppNormThis = normThis.scale(-1);
 
-    // Return endpoints in order of increasing argument
-    if (normThis.argument < oppNormThis.argument) {
-      return [normThis, oppNormThis];
-    }
-    return [oppNormThis, normThis];
+    return [normThis, oppNormThis];
   }
 
   copyDrawingProperties(that) {
@@ -223,7 +413,7 @@ class Point {
     const y = this.x * that.y + this.y * that.x;
     return new Point(x, y)
   }
-  distance(that) {
+  distanceTo(that) {
     const difference = this.minus(that);
     return difference.modulus;
   }
@@ -276,14 +466,27 @@ class Line {
     this.lineWidth = this.hypCanvas.lineWidth;
     this.segment = this.hypCanvas.activeTool === 'segment' || this.hypCanvas.activeTool === 'polygon';
 
+    // Record the points in the order they were clicked
+    this.point1 = point1;
+    this.point2 = point2;
+
     // If one of the points is zero, return a diameter through the other
     if (point1.isZero() || point2.isZero()) {
       this.diameter = true;
-      const diameterEndpoints = point1.isZero() ?
+      
+      // Determine the endpoints
+      const [endpointA, endpointB] = point1.isZero() ?
         point2.getDiameterEndpoints(hypCanvas) :
         point1.getDiameterEndpoints(hypCanvas);
-      this.endpoint1 = diameterEndpoints[0];
-      this.endpoint2 = diameterEndpoints[1];
+      if (point1.distanceTo(endpointA) < point1.distanceTo(endpointB)) {
+        this.endpoint1 = endpointA;
+        this.endpoint2 = endpointB;
+      } else {
+        this.endpoint1 = endpointB;
+        this.endpoint2 = endpointA;
+      }
+      
+      // Determine the anchors: anchor1 = 0
       if (point1.isZero()) {
         this.anchor1 = point1;
         this.anchor2 = point2;
@@ -296,13 +499,20 @@ class Line {
     }
     
     // If the points have the same argument (mod pi), return a diameter through either
-    else if (
-      point1.isOnADiameterWith(point2, 0.01)
-    ) {
+    else if (point1.isOnADiameterWith(point2, 0.01)) {
       this.diameter = true;
-      const diameterEndpoints = point1.getDiameterEndpoints(hypCanvas);
-      this.endpoint1 = diameterEndpoints[0];
-      this.endpoint2 = diameterEndpoints[1];
+
+      // Determine the endpoints
+      const [endpointA, endpointB] = point1.getDiameterEndpoints(hypCanvas);
+      if (point1.distanceTo(endpointA) < point1.distanceTo(endpointB)) {
+        this.endpoint1 = endpointA;
+        this.endpoint2 = endpointB;
+      } else {
+        this.endpoint1 = endpointB;
+        this.endpoint2 = endpointA;
+      }
+
+      // Determine the anchors: anchor1 arg < anchor2 arg
       if (point1.modulus < point2.modulus) {
         this.anchor1 = point1;
         this.anchor2 = point2;
@@ -328,7 +538,7 @@ class Line {
       const denominator = (p.times(q.conjugate())).minus((p.conjugate()).times(q));
       const center = numerator.dividedBy(denominator);
       this.center = center.scale(canvasRadius);
-      this.radius = p.distance(center) * canvasRadius;
+      this.radius = p.distanceTo(center) * canvasRadius;
 
       // Define the anchors in order of increasing argument
       if (point1.argument < point2.argument) {
@@ -349,22 +559,7 @@ class Line {
   }
 
   getEndpoints(normalized = true) {
-    // If line is a diameter, endpoints are already calculated
-    if (this.diameter) {
-      const endpoint1 = normalized ? 
-        this.endpoint1.scale(1/this.hypCanvas.radius) :
-        this.endpoint1;
-      const endpoint2 = normalized ?
-        this.endpoint2.scale(1/this.hypCanvas.radius) :
-        this.endpoint2;
-      const endpoints = endpoint1.argument > endpoint2.argument ?
-        [endpoint1, endpoint2] :
-        [endpoint2, endpoint1];
-
-      return endpoints
-    }
-
-    // Otherwise, get and normalize the center and radius
+    // Normalize the center and radius
     const centerNormalized = this.center.scale(1/this.hypCanvas.radius);
     const radiusNormalized = this.radius/this.hypCanvas.radius;
 
@@ -386,17 +581,25 @@ class Line {
     const posEndpoint = posNumerator.dividedBy(denominator);
     const negEndpoint = negNumerator.dividedBy(denominator);
 
-    // If not normalized, rescale up to the canvas size
-    if (!normalized) {
-      posEndpoint.scale(this.hypCanvas.radius);
-      negEndpoint.scale(this.hypCanvas.radius);
+    // Order the endpoints in the same order as the points that created the line
+    let endpoint1;
+    let endpoint2;
+    const point1Normalized = this.point1.scale(1/this.hypCanvas.radius);
+    if (point1Normalized.distanceTo(posEndpoint) < point1Normalized.distanceTo(negEndpoint)) {
+      endpoint1 = posEndpoint;
+      endpoint2 = negEndpoint;
+    } else {
+      endpoint1 = negEndpoint;
+      endpoint2 = posEndpoint;
     }
 
-    // Return the endpoints in increasing order of argument
-    if (posEndpoint.argument < negEndpoint.argument) {
-      return [posEndpoint, negEndpoint];
+    // If not normalized, rescale up to the canvas size
+    if (!normalized) {
+      endpoint1.scale(this.hypCanvas.radius);
+      endpoint2.scale(this.hypCanvas.radius);
     }
-    return [negEndpoint, posEndpoint];
+
+    return [endpoint1, endpoint2];
   }
 
   copyDrawingProperties(that) {
@@ -422,7 +625,9 @@ class Line {
     const anchorSize = anchor1.anchorSize;
 
     // Create a new line with the adjusted anchors
-    const adjustedLine = new Line(this.hypCanvas, ...adjustedAnchors);
+    const adjustedLine = anchor1.isEqualTo(this.point1) ?
+      new Line(this.hypCanvas, adjustedAnchors[0], adjustedAnchors[1]) :
+      new Line(this.hypCanvas, adjustedAnchors[1], adjustedAnchors[0]);
     adjustedLine.copyDrawingProperties(this);
     adjustedLine.anchors.forEach(anchor => anchor.anchorSize = anchorSize);
 
@@ -641,9 +846,19 @@ class Mobius {
   }
 
   static TRANSLATE(hypCanvas, axis, translationDistance) {
-    const endpoints = axis.getEndpoints();
-    const p = endpoints[0];
-    const q = endpoints[1];
+    // Determine the normalized endpoints
+    let endpoint1Normalized;
+    let endpoint2Normalized
+    if (axis.diameter) {
+      endpoint1Normalized = axis.endpoint1.scale(1/hypCanvas.radius);
+      endpoint2Normalized = axis.endpoint2.scale(1/hypCanvas.radius);
+    } else {
+      [endpoint1Normalized, endpoint2Normalized] = axis.getEndpoints();
+    }
+
+    // const endpoints = axis.getEndpoints();
+    const p = endpoint1Normalized;
+    const q = endpoint2Normalized;
     const e = Math.exp(translationDistance);
 
     const a = (q.scale(e)).minus(p);
@@ -694,4 +909,4 @@ class Mobius {
   }
 }
 
-export { HypCanvas, Point, Line, Polygon, Mobius, genRandomTriangle }
+export { HypCanvas, Point, Line, Polygon, Mobius }

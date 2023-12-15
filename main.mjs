@@ -1,7 +1,20 @@
-import { HypCanvas, Point, Mobius } from "./js modules/geometryClasses.mjs";
+import { HypCanvas, Point, Line, Mobius } from "./js modules/geometryClasses.mjs";
 import { drawAll } from "./js modules/drawToCanvas.mjs";
-import { deepCopyShapes, getCanvasCoord, removeBorder, resetToolBar, unselectAllShapes } from "./js modules/util.mjs";
-import { lineClick, polygonClick, rotateClick, clickDragDown, clickDragMove, clickDragUp, translateClick } from "./js modules/toolbarHandlers.mjs";
+import { 
+  getCanvasCoord,
+  removeBorder,
+  resetToolBar,
+  switchPlayPauseButtonText,
+} from "./js modules/util.mjs";
+import {
+  clickDragDown,
+  clickDragMove,
+  clickDragUp,
+  lineClick,
+  polygonClick,
+  rotateClick,
+  translateClick
+} from "./js modules/toolbarHandlers.mjs";
 
 /**
  * STARTUP
@@ -76,12 +89,12 @@ function attachCursorEventListeners(hypCanvas) {
     const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
   
     // Only display the cursor inside the boundary while not dragging
-    const cursorOutside = mouseX**2 + mouseY**2 > hypCanvas.radius**2;
-    if (cursorOutside || hypCanvas.dragging) {
-      hypCanvas.cursor.display = false;
-    } else {
+    const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
+    if (cursorInside && !hypCanvas.dragging) {
       hypCanvas.cursor.display = true;
       hypCanvas.cursor.point = new Point(mouseX, mouseY);
+    } else {
+      hypCanvas.cursor.display = false;
     }
   
     // Redraw the canvas
@@ -108,6 +121,7 @@ function attachCursorEventListeners(hypCanvas) {
 
 function attachToolbarEventListeners(hypCanvas) {
   // Wrapping the toolbar handlers so they can be removed
+  //#region
   function handleClickDragDown(e) {
     clickDragDown(e, hypCanvas);
   }
@@ -129,8 +143,9 @@ function attachToolbarEventListeners(hypCanvas) {
   function handleTranslateClick(e) {
     translateClick(e, hypCanvas);
   }
+  //#endregion
 
-  // Attach the select tool event listeners to canvas
+  // Attach the click and drag tool event listeners to the canvas
   const canvas = hypCanvas.canvas;
   canvas.addEventListener('mousedown', handleClickDragDown);
   canvas.addEventListener('mousemove', handleClickDragMove);
@@ -172,7 +187,7 @@ function attachToolbarEventListeners(hypCanvas) {
     hypCanvas.activeTool = e.target.value;
     if (hypCanvas.activeTool !== 'clickDrag') {
       if (hypCanvas.selected) {
-        unselectAllShapes(hypCanvas);
+        hypCanvas.unselectAllShapes();
       }
       if (hypCanvas.transforming) {
         hypCanvas.transforming = false;
@@ -199,56 +214,29 @@ function attachToolbarEventListeners(hypCanvas) {
 function attachTransformControlsEventListeners(hypCanvas) {
   // Transformation handler
   function runTransformation(hypCanvas) {
-    // Transformation callbacks
-    function rotate(timestamp) {
-      // Only proceed if hypCanvas.transforming is true
+    // Transform callback for requestAnimationFrame
+    function transform(timestamp) {
       if (hypCanvas.transforming) {
-        // Calculate how much time has passed
+        // Calculate how much time has passed and update the last timestamp
         const elapsed = hypCanvas.lastTimestamp ?
           timestamp - hypCanvas.lastTimestamp :
           0;
         hypCanvas.lastTimestamp = timestamp;
-        
-        // Determine the mobius transformation
-        const theta = (hypCanvas.transformSpeed * elapsed) % (2 * Math.PI);
-        const rotateByTheta = Mobius.ROTATE(hypCanvas, hypCanvas.centerOfRotation, theta);
-  
-        // Apply mobius transformation to all shapes
-        for (const shapeType in hypCanvas.shapes) {
-          const shapeArray = hypCanvas.shapes[shapeType];
-          hypCanvas.shapes[shapeType] = shapeArray.map(
-            shape => rotateByTheta.applyTo(shape)
-          );
+
+        // Determine the mobius transformation to apply
+        let mobius;
+        if (hypCanvas.activeTransform === 'rotate') {
+          const theta = (hypCanvas.transformSpeed * elapsed) % (2 * Math.PI);
+          mobius = Mobius.ROTATE(hypCanvas, hypCanvas.transformShape, theta);
+        } else if (hypCanvas.activeTransform === 'translate') {
+          const translationDistance = hypCanvas.transformSpeed * elapsed;
+          mobius = Mobius.TRANSLATE(hypCanvas, hypCanvas.transformShape, translationDistance);
         }
-  
-        // Redraw the canvas
-        drawAll(hypCanvas);
-  
-        // Move forward another frame
-        requestAnimationFrame(rotate);
-      }
-    };
-    function translate(timestamp) {
-      // Only proceed if hypCanvas.transforming is true
-      if (hypCanvas.transforming) {
-        // Calculate how much time has passed
-        const elapsed = hypCanvas.lastTimestamp ?
-          timestamp - hypCanvas.lastTimestamp :
-          0;
-        hypCanvas.lastTimestamp = timestamp;
-        
-        // Determine the mobius transformation
-        const axisOfTranslation = hypCanvas.axisOfTranslation.axis;
-        const translationDistance = hypCanvas.axisOfTranslation.firstPoint.isEqualTo(axisOfTranslation.anchor1) ?
-          hypCanvas.transformSpeed * elapsed :
-          -hypCanvas.transformSpeed * elapsed;
-        const translateByDist = Mobius.TRANSLATE(hypCanvas, axisOfTranslation, translationDistance);
 
         // Apply mobius transformation to all shapes
         for (const shapeType in hypCanvas.shapes) {
-          const shapeArray = hypCanvas.shapes[shapeType];
-          hypCanvas.shapes[shapeType] = shapeArray.map(
-            shape => translateByDist.applyTo(shape)
+          hypCanvas.shapes[shapeType] = hypCanvas.shapes[shapeType].map(
+            shape => mobius.applyTo(shape)
           );
         }
   
@@ -256,41 +244,37 @@ function attachTransformControlsEventListeners(hypCanvas) {
         drawAll(hypCanvas);
   
         // Move forward another frame
-        requestAnimationFrame(translate);
+        requestAnimationFrame(transform);
       }
     }
-    const allTransforms = {
-      "rotate": rotate,
-      "translate": translate
-    };
-  
+
     // Start transforming
-    const activeTransform = allTransforms[hypCanvas.activeTransform];
-    requestAnimationFrame(activeTransform);
+    requestAnimationFrame(transform);
   }
 
   // Button appearance handler
-  function startAndStop(e, hypCanvas) {
-    // Get the button and its current text
-    const playPauseButton = e.target;
-    const currentButtonText = playPauseButton.textContent;
-
+  function playAndPause(e, hypCanvas) {
     // Case 1: If a center of rotation or axis of translation has been placed, start transforming
-    let changeButtonText = true;
-    const transformShapePlaced = hypCanvas.centerOfRotation || hypCanvas.axisOfTranslation;
-    if (transformShapePlaced && !hypCanvas.transforming) {
-      if (hypCanvas.centerOfRotation) {
-        hypCanvas.centerOfRotation.fillStyle = 'purple';
-      } else {
-        hypCanvas.axisOfTranslation.axis.strokeStyle = 'purple';
-        for (const anchor of hypCanvas.axisOfTranslation.axis.anchors) {
+    let switchButtonText = true;
+    if (hypCanvas.transformShape && !hypCanvas.transforming) {
+     // Change color of transform shape to purple
+     let activeTransform;
+      if (hypCanvas.transformShape instanceof Point) {
+        activeTransform = 'rotate';
+        hypCanvas.transformShape.fillStyle = 'purple';
+      } else if (hypCanvas.transformShape instanceof Line) {
+        activeTransform = 'translate';
+        hypCanvas.transformShape.strokeStyle = 'purple';
+        for (const anchor of hypCanvas.transformShape.anchors) {
           anchor.fillStyle = 'purple';
         }
       }
+
+      // Activate transforming flag and set activeTransform
       hypCanvas.transforming = true;
-      hypCanvas.activeTransform = hypCanvas.centerOfRotation ?
-        'rotate' :
-        'translate';
+      hypCanvas.activeTransform = activeTransform;
+
+      // Start transforming
       runTransformation(hypCanvas);
     }
 
@@ -299,33 +283,31 @@ function attachTransformControlsEventListeners(hypCanvas) {
       hypCanvas.transforming = false;
       hypCanvas.activeTransform = null;
       hypCanvas.lastTimestamp = null;
-      unselectAllShapes(hypCanvas);
+      hypCanvas.unselectAllShapes();
       drawAll(hypCanvas);
     }
 
-    // If neither Case 1 or 2 holds, do not change the button and alert the user
+    // If neither Case 1 nor 2 holds, do not change the button and alert the user
     else {
+      switchButtonText = false;
       let alertText;
-      if (!transformShapePlaced) {
-        alertText = 'Nothing to start!'
+      if (!hypCanvas.transformShape) {
+        alertText = 'Nothing to play!';
       } else if (!hypCanvas.transforming) {
-        alertText = 'Nothing to stop!'
+        alertText = 'Nothing to pause!';
       }
       alert(alertText);
-      changeButtonText = false;
     }
 
     // Update button text if Case 1 or Case 2 occurred
-    if (changeButtonText) {
-      playPauseButton.textContent = currentButtonText === 'Start transforming' ?
-        "Stop transforming" :
-        "Start transforming";
+    if (switchButtonText) {
+      switchPlayPauseButtonText();
     }
   }
 
-  // Start/Stop button
+  // Attach handler to play/pause button
   const playPauseButton = document.querySelector('#playPause');
-  playPauseButton.addEventListener('click', e => startAndStop(e, hypCanvas));
+  playPauseButton.addEventListener('click', e => playAndPause(e, hypCanvas));
 
   // Transform speed
   const speedRange = document.querySelector('#speed');
@@ -412,7 +394,7 @@ function attachColorButtonEventListeners(hypCanvas) {
     if (hypCanvas.selected) {
       // Save a copy of the current shapes
       const shapes = hypCanvas.shapes;
-      hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
+      hypCanvas.saveCurrentShapes();
 
       // Update stroke color
       if (hypCanvas.colorType === 'stroke') {
@@ -478,7 +460,7 @@ function attachColorButtonEventListeners(hypCanvas) {
     if (hypCanvas.selected) {
       // Save a copy of the current shapes
       const shapes = hypCanvas.shapes;
-      hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
+      hypCanvas.saveCurrentShapes();
 
       // Update stroke color
       if (hypCanvas.colorType === 'stroke') {
@@ -538,7 +520,8 @@ function attachLineWidthEventListeners(hypCanvas) {
     if (hypCanvas.selected) {
       // Save a copy of the current shapes
       const shapes = hypCanvas.shapes;
-      hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
+      hypCanvas.saveCurrentShapes();
+      // hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
 
       // Lines
       for (const line of shapes.lines) {
@@ -593,7 +576,8 @@ function attachFillOpacityEventListeners(hypCanvas) {
     if (hypCanvas.selected) {
       // Save a copy of the current shapes
       const shapes = hypCanvas.shapes;
-      hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
+      hypCanvas.saveCurrentShapes();
+      // hypCanvas.shapeHistory.push(deepCopyShapes(shapes));
 
       // Polygons
       for (const polygon of shapes.polygons) {
@@ -621,10 +605,12 @@ function attachEditButtonsEventListeners(hypCanvas) {
   const undoButton = document.querySelector('#undo');
   undoButton.addEventListener('click', () => {
     if (hypCanvas.shapeHistory.length > 0) {
-      hypCanvas.shapes = hypCanvas.shapeHistory.pop();
+      const previousShapes = hypCanvas.shapeHistory.pop();
+      hypCanvas.shapes = previousShapes.shapes;
+      hypCanvas.transformShape = previousShapes.transformShape;
       drawAll(hypCanvas);
     } else {
-      alert('Nothing to undo!')
+      alert('Nothing to undo!');
     }
   });
 
@@ -632,16 +618,18 @@ function attachEditButtonsEventListeners(hypCanvas) {
   const deleteButton = document.querySelector('#delete');
   deleteButton.addEventListener('click', () => {
     if (hypCanvas.selected) {
-      hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+      hypCanvas.saveCurrentShapes();
       for (const shapeType in hypCanvas.shapes) {
         hypCanvas.shapes[shapeType] = hypCanvas.shapes[shapeType].filter(shape => !shape.selected);
       }
-      if (hypCanvas.centerOfRotation && hypCanvas.centerOfRotation.selected) {
-        hypCanvas.centerOfRotation = null;
+      if (hypCanvas.transformShape && hypCanvas.transformShape.selected) {
+        hypCanvas.transformShape = null;
+        hypCanvas.transforming = false;
+        hypCanvas.activeTransform = null;
+        hypCanvas.lastTimestamp = null;
+        switchPlayPauseButtonText();
       }
-      if (hypCanvas.axisOfTranslation && hypCanvas.axisOfTranslation.axis.selected) {
-        hypCanvas.axisOfTranslation = null;
-      }
+      hypCanvas.unselectAllShapes();
       drawAll(hypCanvas);
     } else {
       alert('Select a shape first to delete it.')
@@ -651,9 +639,10 @@ function attachEditButtonsEventListeners(hypCanvas) {
   // Clear button
   const clearButton = document.querySelector('#clear');
   clearButton.addEventListener('click', () => {
-    hypCanvas.shapeHistory.push(deepCopyShapes(hypCanvas.shapes));
+    hypCanvas.saveCurrentShapes();
     for (const shapeType in hypCanvas.shapes) {
       hypCanvas.shapes[shapeType].length = 0;
+      hypCanvas.transformShape = null;
     }
     drawAll(hypCanvas);
   });
