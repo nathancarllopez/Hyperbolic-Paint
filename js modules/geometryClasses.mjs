@@ -1,4 +1,4 @@
-class HypCanvas {
+class HypCanvas { 
   constructor(canvas, bdryPadding, oldCanvas) {
     // Get the canvas width
     this.canvas = canvas;
@@ -33,6 +33,7 @@ class HypCanvas {
       this.shapes = oldCanvas.shapes;
       this.transformShape = oldCanvas.transformShape;
       this.cursor = oldCanvas.cursor;
+      this.axes = oldCanvas.axes;
       this.shapeHistory = oldCanvas.shapeHistory;
 
       // Drawing variables
@@ -72,9 +73,17 @@ class HypCanvas {
       };
       this.transformShape = null;
       this.cursor = { display: false};
+      this.axes = genStartingAxes(this);
       this.shapeHistory = [];
 
+      // This part is for testing performance
+      // for (let i = 0; i < 5000; i++) {
+      //   this.shapes.polygons.push(genRandomTriangle(this));
+      // }
+
       // Drawing variables
+      this.displayAxes = true;
+      this.displayCenter = true;
       this.selected = false;
       this.dragging = false;
       this.shapesMoved = false;
@@ -87,8 +96,6 @@ class HypCanvas {
       this.activeTransform = null;
       this.lastTimestamp = null;
       this.transformSpeed = 0.0001;
-      // this.centerOfRotation = null;
-      // this.axisOfTranslation = null;
     }
   }
 
@@ -96,6 +103,15 @@ class HypCanvas {
     // Clear out any previously selected shapes
     if (this.selected) {
       this.unselectAllShapes();
+    }
+
+    // Clicked points
+    for (const point of this.shapes.clickedPoints) {
+      if (point.pointClicked(mouseX, mouseY)) {
+        point.selected = true;
+        point.fillStyle = 'black';
+        this.selected = true;
+      }
     }
 
     // Lines
@@ -169,9 +185,69 @@ class HypCanvas {
     }
   }
 
+  // selectAllShapes() {
+  //   // Turn on selected flag
+  //   this.selected = true;
+
+  //   // Select clicked points
+  //   for (const point of this.shapes.clickedPoints) {
+  //     point.selected = true;
+  //     point.fillStyle = 'black';
+  //   }
+
+  //   // Select lines
+  //   for (const line of this.shapes.lines) {
+  //     line.selected = true;
+  //     for (const anchor of line.anchors) {
+  //       anchor.selected = true;
+  //       anchor.fillStyle = 'black';
+  //     }
+  //   }
+
+  //   // Select polygons
+  //   for (const polygon of this.shapes.polygons) {
+  //     polygon.selected = true;
+  //     for (const edge of polygon.edges) {
+  //       edge.selected = true;
+  //       for (const anchor of edge.anchors) {
+  //         anchor.selected = true;
+  //         anchor.fillStyle = 'black';
+  //       }
+  //     }
+  //   }
+
+  //   // Select free drawings
+  //   // TO DO
+
+  //   // Select transform shapes
+  //   if (this.transformShape && !this.transforming) {
+  //     // Center of rotation
+  //     if (this.transformShape instanceof Point) {
+  //       this.transformShape.selected = true;
+  //       this.transformShape.fillStyle = 'purple';
+  //     }
+
+  //     // Axis of translation
+  //     else if (this.transformShape instanceof Line) {
+  //       this.transformShape.selected = true;
+  //       this.transformShape.strokeStyle = 'purple';
+  //       for (const anchor of this.transformShape.anchors) {
+  //         anchor.selected = true;
+  //         anchor.fillStyle = 'purple';
+  //       }
+  //     }
+  //   }
+  // }
+
   unselectAllShapes() {
     // Turn off selected flag
     this.selected = false;
+
+    // Unselect clicked points
+    for (const point of this.shapes.clickedPoints) {
+      point.selected = false;
+      point.fillStyle = 'gray';
+    }
 
     // Unselect lines
     for (const line of this.shapes.lines) {
@@ -279,14 +355,71 @@ class HypCanvas {
       this.transformShape = this.transformShape.recalculatePosition(changeX, changeY);
     }
   }
+
+  moveAllShapes(mouseX, mouseY) {
+    // Turn on shapes moved flag
+    this.shapesMoved = true;
+
+    // Restore shapes to their position at start of move
+    const startShapes = this.shapeHistory[this.shapeHistory.length - 1];
+    this.shapes = startShapes.shapes;
+    this.transformShape = startShapes.transformShape;
+
+    // Select all shapes
+    // this.selectAllShapes();
+
+    // Get starting point, current point, and the line connecting them
+    const start = new Point(this, this.startX, this.startY);
+    const current = new Point(this, mouseX, mouseY);
+    const axis = new Line(this, start, current);
+
+    // Determine the mobius transformation
+    const translationDistance = 0.01 * axis.hypDist();
+    const moveMobius = Mobius.TRANSLATE(this, axis, translationDistance);
+
+    // Move all shapes
+    for (const shapeArray of Object.values(this.shapes)) {
+      for (let index = 0; index < shapeArray.length; index++) {
+        shapeArray[index] = moveMobius.applyTo(shapeArray[index]);
+      }
+    }
+
+    // Move the transform shape
+    if (this.transformShape) {
+      this.transformShape = moveMobius.applyTo(this.transformShape);
+    }
+
+    // Move the axes and update the label of the center
+    for (const axesType in this.axes) {
+      const isCenterPoint = this.axes[axesType] instanceof Point;
+      if (isCenterPoint) {
+        const movedCenter = moveMobius.applyTo(this.axes[axesType]);
+        this.axes[axesType].updateLabel(movedCenter.x, movedCenter.y);
+      } else {
+        this.axes[axesType] = moveMobius.applyTo(this.axes[axesType], isCenterPoint);
+      }
+    }
+
+    // Unselect all shapes
+    // this.unselectAllShapes();
+  }
 }
 
 class Point {
-  constructor(x, y) {
+  constructor(hypCanvas, x, y) {
     // Drawing properties
+    this.hypCanvas = hypCanvas;
     this.selected = false;
     this.fillStyle = 'gray';
     this.anchorSize = 5;
+    this.displayX = Math.round(100 * (x/this.hypCanvas.radius))/100;
+    this.displayY = Math.round(100 * (y/this.hypCanvas.radius))/100;
+    this.label = this.displayY >= 0 ?
+      `${this.displayX} + ${this.displayY}i` :
+      `${this.displayX} - ${-this.displayY}i`;
+    // this.displayX = Math.round(100 * x)/100;
+    // this.displayY = Math.round(100 * y)/100;
+    // this.label = `(${this.displayX}, ${this.displayY})`;
 
     // Coordinates and length
     this.x = x;
@@ -306,16 +439,39 @@ class Point {
     }
   }
 
-  draw(hypCanvas, drawAnchor = true) {
-    // Prepare the label
-    const ctx = hypCanvas.ctx;
-    const xLabel = Math.round(100 * (this.x/hypCanvas.radius))/100;
-    const yLabel = Math.round(100 * (this.y/hypCanvas.radius))/100;
-    // const xLabel = Math.round(100 * (this.x))/100;
-    // const yLabel = Math.round(100 * (this.y))/100;
-    const label = `(${xLabel}, ${yLabel})`;
+  updateLabel(displayX, displayY) {
+    this.displayX = Math.round(100 * (displayX/this.hypCanvas.radius))/100;
+    this.displayY = Math.round(100 * (displayY/this.hypCanvas.radius))/100;
+    this.label = this.displayY >= 0 ?
+      `${this.displayX} + ${this.displayY}i` :
+      `${this.displayX} - ${-this.displayY}i`;
+  }
 
+  copyDrawingProperties(that, preserveLabel = true) {
+    this.selected = that.selected;
+    this.fillStyle = that.fillStyle;
+    this.anchorSize = that.anchorSize;
+
+    if (preserveLabel) {
+      this.displayX = that.displayX;
+      this.displayY = that.displayY;
+      this.label = that.label;
+    }
+  }
+
+  recalculatePosition(changeX, changeY) {
+    // Create a new point with the new coordinates
+    const adjustedPoint = new Point(this.hypCanvas, this.x + changeX, this.y + changeY);
+
+    // Update the drawing properties for the adjusted point
+    adjustedPoint.copyDrawingProperties(this, false);
+
+    return adjustedPoint;
+  }
+
+  draw(hypCanvas, drawAnchor = true) {
     // Draw the point
+    const ctx = hypCanvas.ctx;
     ctx.fillStyle = this.fillStyle;
     const anchorSize = this.anchorSize;
     if (drawAnchor) {
@@ -325,7 +481,7 @@ class Point {
     }
     ctx.font = '14px serif'
     ctx.scale(1, -1);
-    ctx.fillText(label, this.x + anchorSize, -(this.y + anchorSize));
+    ctx.fillText(this.label, this.x + anchorSize, -(this.y + anchorSize));
     ctx.scale(1, -1);
   }
 
@@ -333,25 +489,15 @@ class Point {
     return (mouseX - this.x)**2 + (mouseY - this.y)**2 < this.anchorSize**2;
   }
 
-  recalculatePosition(changeX, changeY) {
-    // Create a new point with the new coordinates
-    const adjustedPoint = new Point(this.x + changeX, this.y + changeY);
-
-    // Update the drawing properties for the adjusted point
-    adjustedPoint.copyDrawingProperties(this);
-
-    return adjustedPoint;
-  }
-
-  static randPoint = () => {
-    let re;
-    let im;
-    do {
-      re = 2 * Math.random() - 1;
-      im = 2 * Math.random() - 1;
-    } while (re**2 + im**2 > 1);
-    return new Point(re, im)
-  };
+  // static randPoint = () => {
+  //   let re;
+  //   let im;
+  //   do {
+  //     re = 2 * Math.random() - 1;
+  //     im = 2 * Math.random() - 1;
+  //   } while (re**2 + im**2 > 1);
+  //   return new Point(re, im)
+  // };
 
   isOnADiameterWith(that, error = 0) {
     // Reject if both points are zero
@@ -377,23 +523,18 @@ class Point {
     return false;
   }
 
-  getDiameterEndpoints(hypCanvas) {
+  // getDiameterEndpoints(hypCanvas) {
+  getDiameterEndpoints() {
     // Reject when this is zero
     if (this.isZero()) {
       throw "No unique diameter through zero"
     }
 
     // Normalize so modulus is equal to the canvas radius
-    const normThis = this.scale(hypCanvas.radius/this.modulus);
+    const normThis = this.scale(this.hypCanvas.radius/this.modulus);
     const oppNormThis = normThis.scale(-1);
 
     return [normThis, oppNormThis];
-  }
-
-  copyDrawingProperties(that) {
-    this.selected = that.selected;
-    this.fillStyle = that.fillStyle;
-    this.anchorSize = that.anchorSize;
   }
 
   // Equality
@@ -411,23 +552,23 @@ class Point {
   times(that) {
     const x = this.x * that.x - this.y * that.y;
     const y = this.x * that.y + this.y * that.x;
-    return new Point(x, y)
+    return new Point(this.hypCanvas, x, y)
   }
   distanceTo(that) {
     const difference = this.minus(that);
     return difference.modulus;
   }
   conjugate() {
-    return new Point(this.x, -this.y);
+    return new Point(this.hypCanvas, this.x, -this.y);
   }
   plus(that) {
-    return new Point(this.x + that.x, this.y + that.y);
+    return new Point(this.hypCanvas, this.x + that.x, this.y + that.y);
   }
   scale(factor) {
-    return new Point(factor * this.x, factor * this.y);
+    return new Point(this.hypCanvas, factor * this.x, factor * this.y);
   }
   minus(that) {
-    return new Point(this.x - that.x, this.y - that.y);
+    return new Point(this.hypCanvas, this.x - that.x, this.y - that.y);
   }
   dividedBy(that) {
     if (that.isZero()) {
@@ -442,8 +583,10 @@ class Point {
 
   // Hyperbolic geometry
   //#region
-  hypDist(that) {
-
+  crossRatio(a, b, c) {
+    const firstRatio = (this.minus(a)).dividedBy(this.minus(b));
+    const secondRatio = (c.minus(b)).dividedBy(c.minus(a));
+    return firstRatio.times(secondRatio);
   }
   //#endregion
   
@@ -530,8 +673,8 @@ class Line {
 
       // Scale input points so they lie in the unit disk
       const canvasRadius = hypCanvas.radius;
-      const p = new Point(point1.x/canvasRadius, point1.y/canvasRadius);
-      const q = new Point(point2.x/canvasRadius, point2.y/canvasRadius);
+      const p = new Point(hypCanvas, point1.x/canvasRadius, point1.y/canvasRadius);
+      const q = new Point(hypCanvas, point2.x/canvasRadius, point2.y/canvasRadius);
 
       // Determine the center and radius of the hyperbolic geodesic
       const numerator = (p.scale(1 + q.modulus**2)).minus(q.scale(1 + p.modulus**2));
@@ -558,6 +701,26 @@ class Line {
     }
   }
 
+  hypDist() {
+    let endpoint1;
+    let endpoint2;
+    
+    if (this.diameter) {
+      endpoint1 = this.endpoint1;
+      endpoint2 = this.endpoint2;
+    } else {
+      [endpoint1, endpoint2] = this.getEndpoints(false);
+    }
+
+    // endpoint1.draw(this.hypCanvas);
+    // endpoint2.draw(this.hypCanvas);
+
+    const cRat = endpoint1.crossRatio(this.point2, this.point1, endpoint2);
+    const rawDist = Math.log(cRat.x);
+    const dist = Math.abs(rawDist);
+    return dist;
+  }
+
   getEndpoints(normalized = true) {
     // Normalize the center and radius
     const centerNormalized = this.center.scale(1/this.hypCanvas.radius);
@@ -567,14 +730,14 @@ class Line {
     // Solving |z - center|^2 = radius^2 leads to a quadratic equation in z,
     // then use the quadratic formula.
     const beta = radiusNormalized**2 - 1 - centerNormalized.modulus**2;
-    const betaPoint = new Point(1, 0).scale(beta);
+    const betaPoint = new Point(this.hypCanvas, 1, 0).scale(beta);
     const discSquared = beta**2 - 4 * centerNormalized.modulus**2;
     const discriminant = discSquared > 0 ?
       Math.sqrt(discSquared) :
       Math.sqrt(-discSquared);
     const discrPoint = discSquared > 0 ?
-      new Point(1, 0).scale(discriminant) :
-      new Point(0, 1).scale(discriminant);
+      new Point(this.hypCanvas, 1, 0).scale(discriminant) :
+      new Point(this.hypCanvas, 0, 1).scale(discriminant);
     const posNumerator = discrPoint.minus(betaPoint);
     const negNumerator = (discrPoint.scale(-1)).minus(betaPoint);
     const denominator = (centerNormalized.conjugate()).scale(2);
@@ -595,8 +758,8 @@ class Line {
 
     // If not normalized, rescale up to the canvas size
     if (!normalized) {
-      endpoint1.scale(this.hypCanvas.radius);
-      endpoint2.scale(this.hypCanvas.radius);
+      endpoint1 = endpoint1.scale(this.hypCanvas.radius);
+      endpoint2 = endpoint2.scale(this.hypCanvas.radius);
     }
 
     return [endpoint1, endpoint2];
@@ -634,9 +797,11 @@ class Line {
     return adjustedLine;
   }
 
-  draw(hypCanvas) {
+  draw(hypCanvas, drawAnchors = false) {
     // Draw the anchors
-    this.anchors.forEach(anchor => anchor.draw(hypCanvas));
+    if (!drawAnchors) {
+      this.anchors.forEach(anchor => anchor.draw(hypCanvas));
+    }
 
     // Draw the line
     const ctx = hypCanvas.ctx;
@@ -797,32 +962,12 @@ class Polygon {
   }
 }
 
-function genRandomTriangle(hypCanvas) {
-  const radius = hypCanvas.radius;
-  const vertices = [];
-  do {
-    let re;
-    let im;
-    do {
-      re = 2 * Math.random() - 1;
-      im = 2 * Math.random() - 1;
-    } while (re**2 + im**2 > 1)
-    vertices.push(new Point(re * radius, im * radius));
-  } while (vertices.length < 3)
-
-  const [a, b, c] = vertices;
-  const edges = [
-    new Line(hypCanvas, a, b),
-    new Line(hypCanvas, b, c),
-    new Line(hypCanvas, c, a),
-  ]
-  edges.map(line => line.segment = true);
-  
-  return new Polygon(hypCanvas, ...edges);
-}
-
 class Mobius {
-  /** Will be of the form z \mapsto (az + b)/(cz + d) */
+  /** 
+   * Will be of the form z \mapsto (az + b)/(cz + d)
+   * Assumes that the boundary circle displayed on screen is the unit
+   * circle, so scaled b and c accordingly
+   */
   constructor(hypCanvas, a, b, c, d) {
     this.hypCanvas = hypCanvas;
     this.a = a;
@@ -833,8 +978,8 @@ class Mobius {
 
   static ROTATE(hypCanvas, center, theta) {
     const centerNormalized = center.scale(1/hypCanvas.radius);
-    const euler = new Point(Math.cos(theta), Math.sin(theta));
-    const one = new Point(1, 0);
+    const euler = new Point(hypCanvas, Math.cos(theta), Math.sin(theta));
+    const one = new Point(hypCanvas, 1, 0);
     const centerLengthSquared = one.scale(centerNormalized.modulus**2);
 
     const a = euler.minus(centerLengthSquared);
@@ -863,13 +1008,13 @@ class Mobius {
 
     const a = (q.scale(e)).minus(p);
     const b = (p.times(q)).scale(1 - e);
-    const c = new Point(e - 1, 0);
+    const c = new Point(hypCanvas, e - 1, 0);
     const d = q.minus(p.scale(e));
 
     return new Mobius(hypCanvas, a, b, c, d);
   }
 
-  applyTo(shape) {
+  applyTo(shape, updateLabel = true) {
     // Points
     if (shape instanceof Point) {
       // Compute the numerator and denominator
@@ -878,7 +1023,7 @@ class Mobius {
 
       // Compute the final answer and copy it's drawing properties
       const adjPoint = numerator.dividedBy(denominator);
-      adjPoint.copyDrawingProperties(shape)
+      adjPoint.copyDrawingProperties(shape, updateLabel)
 
       return adjPoint;
     }
@@ -886,7 +1031,7 @@ class Mobius {
     // Lines
     else if (shape instanceof Line) {
       // Apply the mobius transformation to the line anchors
-      const adjAnchors = shape.anchors.map(anchor => this.applyTo(anchor));
+      const adjAnchors = shape.anchors.map(anchor => this.applyTo(anchor, updateLabel));
 
       // Create a new line with the adjusted anchors
       const adjLine = new Line(shape.hypCanvas, ...adjAnchors);
@@ -898,7 +1043,7 @@ class Mobius {
     // Polygons
     else if (shape instanceof Polygon) {
       // Apply the mobius transformation to each of the edges
-      const adjEdges = shape.edges.map(edge => this.applyTo(edge));
+      const adjEdges = shape.edges.map(edge => this.applyTo(edge, updateLabel));
 
       // Create a new polygon with the adjusted edges
       const adjPoly = new Polygon(shape.hypCanvas, ...adjEdges);
@@ -910,3 +1055,49 @@ class Mobius {
 }
 
 export { HypCanvas, Point, Line, Polygon, Mobius }
+
+function genRandomTriangle(hypCanvas) {
+  const radius = hypCanvas.radius;
+  const vertices = [];
+  do {
+    let re;
+    let im;
+    do {
+      re = 2 * Math.random() - 1;
+      im = 2 * Math.random() - 1;
+    } while (re**2 + im**2 > 1)
+    vertices.push(new Point(hypCanvas, re * radius, im * radius));
+  } while (vertices.length < 3)
+
+  const [a, b, c] = vertices;
+  const edges = [
+    new Line(hypCanvas, a, b),
+    new Line(hypCanvas, b, c),
+    new Line(hypCanvas, c, a),
+  ]
+  edges.map(line => line.segment = true);
+  
+  return new Polygon(hypCanvas, ...edges);
+}
+
+function genStartingAxes(hypCanvas) {
+  const vert = new Line(
+    hypCanvas,
+    new Point(hypCanvas, 0, hypCanvas.radius),
+    new Point(hypCanvas, 0, -hypCanvas.radius)
+  );
+  vert.strokeStyle = 'gray';
+  const horz = new Line(
+    hypCanvas,
+    new Point(hypCanvas, hypCanvas.radius, 0),
+    new Point(hypCanvas, -hypCanvas.radius, 0)
+  );
+  horz.strokeStyle = 'gray';
+  const center = new Point(hypCanvas, 0, 0);
+
+  return {
+    vert: vert,
+    horz: horz,
+    center: center,
+  }
+}

@@ -90,9 +90,9 @@ function attachCursorEventListeners(hypCanvas) {
   
     // Only display the cursor inside the boundary while not dragging
     const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
-    if (cursorInside && !hypCanvas.dragging) {
+    if (cursorInside && !hypCanvas.dragging && !hypCanvas.moving) {
       hypCanvas.cursor.display = true;
-      hypCanvas.cursor.point = new Point(mouseX, mouseY);
+      hypCanvas.cursor.point = new Point(hypCanvas, mouseX, mouseY);
     } else {
       hypCanvas.cursor.display = false;
     }
@@ -193,6 +193,8 @@ function attachToolbarEventListeners(hypCanvas) {
         hypCanvas.transforming = false;
         hypCanvas.lastTimestamp = null;
       }
+      // hypCanvas.transformShape = null;
+      // drawAll(hypCanvas);
     }
     resetToolBar(hypCanvas);
 
@@ -669,3 +671,10 @@ function attachEditButtonsEventListeners(hypCanvas) {
 //   window.addEventListener('resize', preventSmallWindow);
 //   preventSmallWindow();
 // }
+
+// (function computeTriangleSideLengths() {
+//   const randTriangle = hypCanvas.shapes.polygons[0];
+//   for (const edge of randTriangle.edges) {
+//     console.log(edge.hypDist());
+//   }
+// })()

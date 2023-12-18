@@ -17,23 +17,19 @@ function clickDragDown(e, hypCanvas) {
     hypCanvas.findSelectedShapes(mouseX, mouseY);
 
     // If a shape was clicked, prepare to drag it
-    let updateAndSave = false;
     if (hypCanvas.selected) {
-      updateAndSave = true;
       hypCanvas.dragging = true;
     }
 
     // Otherwise, prepare to translate the plane
-    else {
-      // updateAndSave = true;
-      // hypCanvas.moving = true;
-    }
+    // else {
+    //   hypCanvas.moving = true;
+    // }
 
-    if (updateAndSave) {
-      hypCanvas.startX = mouseX;
-      hypCanvas.startY = mouseY;
-      hypCanvas.saveCurrentShapes();
-    }
+    // Update and save
+    hypCanvas.startX = mouseX;
+    hypCanvas.startY = mouseY;
+    hypCanvas.saveCurrentShapes();
   }
 
   // Otherwise, unselect all shapes
@@ -48,40 +44,74 @@ function clickDragDown(e, hypCanvas) {
 }
 
 function clickDragMove(e, hypCanvas) {
-  // Case 1: A shape is being dragged
-  if (hypCanvas.dragging) {
-    // Get canvas coordinates
-    const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
+  // Get canvas coordinates
+  const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
 
-    // Adjust shapes if inside boundary
-    const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
-    if (cursorInside) {
-      hypCanvas.adjustDraggingShapes(mouseX, mouseY)
+  // Adjust shapes if dragging or moving inside the boundary
+  const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
+  if (cursorInside) {
+    // Set redraw flag
+    let redrawCanvas = true;
+
+    // Case 1: A shape is being dragged
+    if (hypCanvas.dragging) {
+      hypCanvas.adjustDraggingShapes(mouseX, mouseY);
     }
 
-    // Otherwise, reset shapes and turn off dragging flag
+    // Case 2: The plane is being moved
+    else if (hypCanvas.moving) {
+      hypCanvas.moveAllShapes(mouseX, mouseY);
+    }
+
+    // Case 3: Mouse is just being moved inside the boundar
     else {
-      if (hypCanvas.selected) {
-        hypCanvas.unselectAllShapes();
-      }
-      hypCanvas.dragging = false;
+      redrawCanvas = false;
     }
 
-    // Redraw the canvas
-    drawAll(hypCanvas);
+    // Redraw the canvas for Cases 1 or 2
+    if (redrawCanvas) {
+      drawAll(hypCanvas);
+    }
   }
 
-  // Case 2: The plane is being moved
-  // else if (hypCanvas.moving) {}
+  // If outside of the boundary, unselect all shapes and turn off flags
+  else {
+    if (hypCanvas.selected) {
+      hypCanvas.unselectAllShapes();
+    }
+    hypCanvas.dragging = false;
+    hypCanvas.moving = false;
+  }
+
+  // // Case 1: A shape is being dragged
+  // if (hypCanvas.dragging) {
+  //   // Adjust shapes if inside boundary
+  //   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
+  //   if (cursorInside) {
+  //     hypCanvas.adjustDraggingShapes(mouseX, mouseY)
+  //   }
+
+  //   // Otherwise, unselect all shapes and turn off dragging flag
+  //   else {
+  //     if (hypCanvas.selected) {
+  //       hypCanvas.unselectAllShapes();
+  //     }
+  //     hypCanvas.dragging = false;
+  //   }
+
+  //   // Redraw the canvas
+  //   drawAll(hypCanvas);
+  // }
 }
 
 function clickDragUp(e, hypCanvas) {
-  // Turn off the dragging flag
+  // Turn off the dragging and moving flags
   hypCanvas.dragging = false;
+  hypCanvas.moving = false;
 
   // Turn the cursor on
   hypCanvas.cursor.display = true;
-  hypCanvas.cursor.point = new Point(...getCanvasCoord(e, hypCanvas));
+  hypCanvas.cursor.point = new Point(hypCanvas, ...getCanvasCoord(e, hypCanvas));
 
   // If no shape was moved, remove the saved shapes
   if (!hypCanvas.shapesMoved) {
@@ -110,7 +140,7 @@ function lineClick(e, hypCanvas) {
     hypCanvas.saveCurrentShapes();
 
     // Add clicked point to shapes.clickedPoints
-    hypCanvas.shapes.clickedPoints.push(new Point(mouseX, mouseY));
+    hypCanvas.shapes.clickedPoints.push(new Point(hypCanvas, mouseX, mouseY));
 
     // If two points have been clicked, create a new line
     if (hypCanvas.shapes.clickedPoints.length == 2) {
@@ -139,7 +169,7 @@ function polygonClick(e, hypCanvas) {
     hypCanvas.saveCurrentShapes();
 
     // Add clicked point to shapes.clickedPoints
-    hypCanvas.shapes.clickedPoints.push(new Point(mouseX, mouseY));
+    hypCanvas.shapes.clickedPoints.push(new Point(hypCanvas, mouseX, mouseY));
 
     // If at least three points have been clicked and shift is pressed
     if (hypCanvas.shapes.clickedPoints.length > 2 && e.shiftKey) {
@@ -181,7 +211,7 @@ function rotateClick(e, hypCanvas) {
     hypCanvas.saveCurrentShapes();
 
     // Update the center of rotation
-    hypCanvas.transformShape = new Point(mouseX, mouseY);
+    hypCanvas.transformShape = new Point(hypCanvas, mouseX, mouseY);
     hypCanvas.transformShape.fillStyle = 'fuchsia';
 
     // Redraw the canvas
@@ -205,7 +235,7 @@ function translateClick(e, hypCanvas) {
     hypCanvas.saveCurrentShapes();
 
     // Add clicked point to shapes.clickedPoints
-    const clicked = new Point(mouseX, mouseY)
+    const clicked = new Point(hypCanvas, mouseX, mouseY)
     clicked.fillStyle = 'fuchsia';
     hypCanvas.shapes.clickedPoints.push(clicked);
 
