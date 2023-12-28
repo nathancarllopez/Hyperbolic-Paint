@@ -33,7 +33,7 @@ class HypCanvas {
       this.shapes = oldCanvas.shapes;
       this.transformShape = oldCanvas.transformShape;
       this.cursor = oldCanvas.cursor;
-      this.axes = oldCanvas.axes;
+      // this.axes = oldCanvas.axes;
       this.shapeHistory = oldCanvas.shapeHistory;
 
       // Drawing variables
@@ -74,7 +74,7 @@ class HypCanvas {
       };
       this.transformShape = null;
       this.cursor = { display: false};
-      this.axes = genStartingAxes(this);
+      // this.axes = genStartingAxes(this);
       this.shapeHistory = [];
 
       // This part is for testing performance
