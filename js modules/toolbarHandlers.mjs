@@ -21,11 +21,6 @@ function clickDragDown(e, hypCanvas) {
       hypCanvas.dragging = true;
     }
 
-    // Otherwise, prepare to translate the plane
-    // else {
-    //   hypCanvas.moving = true;
-    // }
-
     // Update and save
     hypCanvas.startX = mouseX;
     hypCanvas.startY = mouseY;
@@ -50,26 +45,9 @@ function clickDragMove(e, hypCanvas) {
   // Adjust shapes if dragging or moving inside the boundary
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
-    // Set redraw flag
-    let redrawCanvas = true;
-
-    // Case 1: A shape is being dragged
+    // Handle shapes being dragged
     if (hypCanvas.dragging) {
       hypCanvas.adjustDraggingShapes(mouseX, mouseY);
-    }
-
-    // Case 2: The plane is being moved
-    else if (hypCanvas.moving) {
-      hypCanvas.moveAllShapes(mouseX, mouseY);
-    }
-
-    // Case 3: Mouse is just being moved inside the boundar
-    else {
-      redrawCanvas = false;
-    }
-
-    // Redraw the canvas for Cases 1 or 2
-    if (redrawCanvas) {
       drawAll(hypCanvas);
     }
   }
@@ -82,32 +60,11 @@ function clickDragMove(e, hypCanvas) {
     hypCanvas.dragging = false;
     hypCanvas.moving = false;
   }
-
-  // // Case 1: A shape is being dragged
-  // if (hypCanvas.dragging) {
-  //   // Adjust shapes if inside boundary
-  //   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
-  //   if (cursorInside) {
-  //     hypCanvas.adjustDraggingShapes(mouseX, mouseY)
-  //   }
-
-  //   // Otherwise, unselect all shapes and turn off dragging flag
-  //   else {
-  //     if (hypCanvas.selected) {
-  //       hypCanvas.unselectAllShapes();
-  //     }
-  //     hypCanvas.dragging = false;
-  //   }
-
-  //   // Redraw the canvas
-  //   drawAll(hypCanvas);
-  // }
 }
 
 function clickDragUp(e, hypCanvas) {
   // Turn off the dragging and moving flags
   hypCanvas.dragging = false;
-  hypCanvas.moving = false;
 
   // Turn the cursor on
   hypCanvas.cursor.display = true;
@@ -144,7 +101,9 @@ function lineClick(e, hypCanvas) {
 
     // If two points have been clicked, create a new line
     if (hypCanvas.shapes.clickedPoints.length == 2) {
-      hypCanvas.shapes.lines.push(new Line(hypCanvas, ...hypCanvas.shapes.clickedPoints))
+      const lineToAdd = new Line(hypCanvas, ...hypCanvas.shapes.clickedPoints)
+      console.log(lineToAdd.hypDist());
+      hypCanvas.shapes.lines.push(lineToAdd)
       hypCanvas.shapes.clickedPoints.length = 0;
     }
 

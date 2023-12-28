@@ -7,6 +7,8 @@ I used W3 schools tooltips page for the toolbar as well: https://www.w3schools.c
 
 Bugs to fix:
 
+- Fill colors not working
+
 To do:
 
 - Style the Controls section. In particular, make the play and pause button one button that changes what it says from play to pause. Then center it, and maybe make it bigger?

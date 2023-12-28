@@ -33,9 +33,7 @@ function createHypCanvas(oldCanvas = {}) {
 
   // Get the canvas element and set its starting size
   const canvas = document.querySelector('canvas');
-  const screenSize = Math.min(
-    window.innerHeight, window.innerWidth
-  );
+  const screenSize = Math.min(window.innerHeight, window.innerWidth);
   const canvasSize = screenSize * PROPORTION;
   canvas.width = canvasSize;
   canvas.height = canvasSize;
@@ -48,10 +46,6 @@ function createHypCanvas(oldCanvas = {}) {
 }
 
 function attachDefaultEventListeners(hypCanvas) {
-  // Window resize event listener
-  // NOT WORKING, SKIPPING FOR NOW
-  // attachWindowEventListener(hypCanvas);
-
   // Cursor event listeners
   attachCursorEventListeners(hypCanvas);
 
@@ -192,6 +186,8 @@ function attachToolbarEventListeners(hypCanvas) {
       if (hypCanvas.transforming) {
         hypCanvas.transforming = false;
         hypCanvas.lastTimestamp = null;
+        switchPlayPauseButtonText();
+        /** To do: Switch play button to pause */
       }
       // hypCanvas.transformShape = null;
       // drawAll(hypCanvas);
@@ -650,31 +646,3 @@ function attachEditButtonsEventListeners(hypCanvas) {
   });
 }
 //#endregion
-
-// NOT WORKING, SKIPPING FOR NOW
-// function attachWindowEventListener() {
-//   // Window resize handler
-//   function preventSmallWindow() {
-//     // Get the content width and height
-//     const contentWidth = document.body.scrollWidth || document.documentElement.scrollWidth;
-//     const contentHeight = document.body.scrollHeight || document.documentElement.scrollHeight;
-
-//     // Resize the window if the width or height get too small
-//     const windowWidth = window.innerWidth
-//     const windowHeight = window.innerHeight;
-//     if (windowWidth < contentWidth || windowHeight < contentHeight) {
-//       window.resizeTo(contentWidth, contentHeight);
-//     }
-//   }
-
-//   // Attach resize event listener
-//   window.addEventListener('resize', preventSmallWindow);
-//   preventSmallWindow();
-// }
-
-// (function computeTriangleSideLengths() {
-//   const randTriangle = hypCanvas.shapes.polygons[0];
-//   for (const edge of randTriangle.edges) {
-//     console.log(edge.hypDist());
-//   }
-// })()

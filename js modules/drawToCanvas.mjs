@@ -39,11 +39,6 @@ function drawShapes(hypCanvas) {
   if (hypCanvas.transformShape) {
     hypCanvas.transformShape.draw(hypCanvas); 
   }
-
-  // Draw the axes
-  // for (const axisShape of Object.values(hypCanvas.axes)) {
-  //   axisShape.draw(hypCanvas, true);
-  // }
 }
 
 // Draw boundary and mask outside of it

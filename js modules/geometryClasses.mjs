@@ -41,6 +41,7 @@ class HypCanvas {
       this.dragging = oldCanvas.dragging;
       this.shapesMoved = oldCanvas.shapesMoved;
       this.moving = oldCanvas.moving;
+      // this.centered = oldCanvas.centered;
       this.startX = oldCanvas.startX;
       this.startY = oldCanvas.startY;
 
@@ -88,6 +89,7 @@ class HypCanvas {
       this.dragging = false;
       this.shapesMoved = false;
       this.moving = false;
+      // this.centered = this.axes.center.isEqualTo(new Point(this, 0, 0))
       this.startX = null;
       this.startY = null;
 
@@ -374,7 +376,7 @@ class HypCanvas {
     const axis = new Line(this, start, current);
 
     // Determine the mobius transformation
-    const translationDistance = 0.01 * axis.hypDist();
+    const translationDistance = .01 * axis.hypDist();
     const moveMobius = Mobius.TRANSLATE(this, axis, translationDistance);
 
     // Move all shapes
@@ -396,7 +398,7 @@ class HypCanvas {
         const movedCenter = moveMobius.applyTo(this.axes[axesType]);
         this.axes[axesType].updateLabel(movedCenter.x, movedCenter.y);
       } else {
-        this.axes[axesType] = moveMobius.applyTo(this.axes[axesType], isCenterPoint);
+        this.axes[axesType] = moveMobius.applyTo(this.axes[axesType]);
       }
     }
 
@@ -456,6 +458,8 @@ class Point {
       this.displayX = that.displayX;
       this.displayY = that.displayY;
       this.label = that.label;
+    } else {
+      this.updateLabel(this.x, this.y);
     }
   }
 
