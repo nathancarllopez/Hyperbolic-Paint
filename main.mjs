@@ -10,6 +10,9 @@ import {
   clickDragDown,
   clickDragMove,
   clickDragUp,
+  freeDrawDown,
+  freeDrawMove,
+  freeDrawUp,
   lineClick,
   polygonClick,
   rotateClick,
@@ -84,7 +87,7 @@ function attachCursorEventListeners(hypCanvas) {
   
     // Only display the cursor inside the boundary while not dragging
     const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
-    if (cursorInside && !hypCanvas.dragging && !hypCanvas.moving) {
+    if (cursorInside && !hypCanvas.dragging && !hypCanvas.drawing) {
       hypCanvas.cursor.display = true;
       hypCanvas.cursor.point = new Point(hypCanvas, mouseX, mouseY);
     } else {
@@ -125,6 +128,15 @@ function attachToolbarEventListeners(hypCanvas) {
   function handleClickDragUp(e) {
     clickDragUp(e, hypCanvas);
   }
+  function handleFreeDrawDown(e) {
+    freeDrawDown(e, hypCanvas);
+  }
+  function handleFreeDrawMove(e) {
+    freeDrawMove(e, hypCanvas);
+  }
+  function handleFreeDrawUp(e) {
+    freeDrawUp(e, hypCanvas);
+  }
   function handleLineClick(e) {
     lineClick(e, hypCanvas);
   }
@@ -153,6 +165,11 @@ function attachToolbarEventListeners(hypCanvas) {
         ['mousedown', handleClickDragDown],
         ['mousemove', handleClickDragMove],
         ['mouseup', handleClickDragUp],
+      ],
+      freeDraw: [
+        ['mousedown', handleFreeDrawDown],
+        ['mousemove', handleFreeDrawMove],
+        ['mouseup', handleFreeDrawUp],
       ],
       line: [
         ['click', handleLineClick]
@@ -187,10 +204,7 @@ function attachToolbarEventListeners(hypCanvas) {
         hypCanvas.transforming = false;
         hypCanvas.lastTimestamp = null;
         switchPlayPauseButtonText();
-        /** To do: Switch play button to pause */
       }
-      // hypCanvas.transformShape = null;
-      // drawAll(hypCanvas);
     }
     resetToolBar(hypCanvas);
 

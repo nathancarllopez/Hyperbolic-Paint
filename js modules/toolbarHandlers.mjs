@@ -1,6 +1,6 @@
 import { getCanvasCoord } from "./util.mjs";
 import { drawAll } from "./drawToCanvas.mjs";
-import { Point, Line, Polygon } from "./geometryClasses.mjs";
+import { FreeDrawing, Point, Line, Polygon } from "./geometryClasses.mjs";
 
 /**
  * DRAWING TOOLS
@@ -33,7 +33,7 @@ function clickDragDown(e, hypCanvas) {
       hypCanvas.unselectAllShapes();
     }
   }
-
+  
   // Redraw the canvas
   drawAll(hypCanvas);
 }
@@ -42,7 +42,7 @@ function clickDragMove(e, hypCanvas) {
   // Get canvas coordinates
   const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
 
-  // Adjust shapes if dragging or moving inside the boundary
+  // Adjust shapes if dragging and moving inside the boundary
   const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
   if (cursorInside) {
     // Handle shapes being dragged
@@ -58,12 +58,11 @@ function clickDragMove(e, hypCanvas) {
       hypCanvas.unselectAllShapes();
     }
     hypCanvas.dragging = false;
-    hypCanvas.moving = false;
   }
 }
 
 function clickDragUp(e, hypCanvas) {
-  // Turn off the dragging and moving flags
+  // Turn off the dragging flag
   hypCanvas.dragging = false;
 
   // Turn the cursor on
@@ -78,6 +77,59 @@ function clickDragUp(e, hypCanvas) {
   // Otherwise, turn off the shapes moved flag
   else {
     hypCanvas.shapesMoved = false;
+  }
+}
+
+function freeDrawDown(e, hypCanvas) {
+  // Get canvas coordinates
+  const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
+
+  // If cursor is inside boundary...
+  const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
+  if (cursorInside) {
+    hypCanvas.drawing = true;
+    hypCanvas.shapes.freeDraw.push(new FreeDrawing(hypCanvas, mouseX , mouseY));
+    hypCanvas.saveCurrentShapes();
+  }
+}
+
+function freeDrawMove(e, hypCanvas) {
+  // Get canvas coordinates
+  const [mouseX, mouseY] = getCanvasCoord(e, hypCanvas);
+
+  // Store current coordinates
+  const cursorInside = mouseX**2 + mouseY**2 <= hypCanvas.radius**2;
+  if (cursorInside) {
+    if (hypCanvas.drawing) {
+      hypCanvas.freeDrawAdded = true;
+      const currFreeDraw = hypCanvas.shapes.freeDraw.pop();
+      currFreeDraw.updateEndPoint(mouseX, mouseY);
+      hypCanvas.shapes.freeDraw.push(currFreeDraw);
+      drawAll(hypCanvas);
+    }
+  }
+
+  else {
+    hypCanvas.drawing = false;
+  }
+}
+
+function freeDrawUp(e, hypCanvas) {
+  // Turn off the drawing flag
+  hypCanvas.drawing = false;
+
+  // Turn the cursor on
+  hypCanvas.cursor.display = true;
+  hypCanvas.cursor.point = new Point(hypCanvas, ...getCanvasCoord(e, hypCanvas));
+
+  // If no free drawing was added, remove the last save shapes object
+  if (!hypCanvas.freeDrawAdded) {
+    hypCanvas.shapeHistory.pop();
+  }
+
+  // Otherwise, turn off the free drawing added flag
+  else {
+    hypCanvas.freeDrawAdded = false;
   }
 }
 
@@ -102,7 +154,6 @@ function lineClick(e, hypCanvas) {
     // If two points have been clicked, create a new line
     if (hypCanvas.shapes.clickedPoints.length == 2) {
       const lineToAdd = new Line(hypCanvas, ...hypCanvas.shapes.clickedPoints)
-      console.log(lineToAdd.hypDist());
       hypCanvas.shapes.lines.push(lineToAdd)
       hypCanvas.shapes.clickedPoints.length = 0;
     }
@@ -224,6 +275,9 @@ export {
   clickDragDown,
   clickDragMove,
   clickDragUp,
+  freeDrawDown,
+  freeDrawMove,
+  freeDrawUp,
   lineClick,
   polygonClick,
   rotateClick,

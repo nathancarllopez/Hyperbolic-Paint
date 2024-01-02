@@ -33,15 +33,14 @@ class HypCanvas {
       this.shapes = oldCanvas.shapes;
       this.transformShape = oldCanvas.transformShape;
       this.cursor = oldCanvas.cursor;
-      // this.axes = oldCanvas.axes;
       this.shapeHistory = oldCanvas.shapeHistory;
 
       // Drawing variables
       this.selected = oldCanvas.selected;
       this.dragging = oldCanvas.dragging;
+      this.drawing = oldCanvas.drawing;
       this.shapesMoved = oldCanvas.shapesMoved;
       this.moving = oldCanvas.moving;
-      // this.centered = oldCanvas.centered;
       this.startX = oldCanvas.startX;
       this.startY = oldCanvas.startY;
 
@@ -50,8 +49,6 @@ class HypCanvas {
       this.activeTransform = oldCanvas.activeTransform;
       this.lastTimestamp = oldCanvas.lastTimestamp;
       this.transformSpeed = oldCanvas.transformSpeed;
-      this.centerOfRotation = oldCanvas.centerOfRotation;
-      this.axisOfTranslation = oldCanvas.axisOfTranslation;
     }
 
     // Set this properties to default value
@@ -69,12 +66,11 @@ class HypCanvas {
       this.shapes = {
         clickedPoints: [],
         lines: [],
-        polygons: [genRandomTriangle(this)],
-        // freeDraw: [],
+        polygons: [],
+        freeDraw: [],
       };
       this.transformShape = null;
       this.cursor = { display: false};
-      // this.axes = genStartingAxes(this);
       this.shapeHistory = [];
 
       // This part is for testing performance
@@ -83,13 +79,12 @@ class HypCanvas {
       // }
 
       // Drawing variables
-      this.displayAxes = true;
-      this.displayCenter = true;
       this.selected = false;
       this.dragging = false;
+      this.drawing = false;
+      this.freeDrawAdded = false;
       this.shapesMoved = false;
       this.moving = false;
-      // this.centered = this.axes.center.isEqualTo(new Point(this, 0, 0))
       this.startX = null;
       this.startY = null;
 
@@ -152,7 +147,23 @@ class HypCanvas {
     }
 
     // Free drawings
-    // TO DO
+    for (const freeDrawing of this.shapes.freeDraw) {
+      const startPoint = freeDrawing.startPoint;
+      if (startPoint.pointClicked(mouseX, mouseY)) {
+        startPoint.selected = true;
+        startPoint.fillStyle = 'black';
+        freeDrawing.selected = true;
+        this.selected = true;
+      }
+
+      const endPoint = freeDrawing.endPoint;
+      if (endPoint.pointClicked(mouseX, mouseY)) {
+        endPoint.selected = true;
+        endPoint.fillStyle = 'black';
+        freeDrawing.selected = true;
+        this.selected = true;
+      }
+    }
 
     // Transform shapes
     if (this.transformShape) {
@@ -187,60 +198,6 @@ class HypCanvas {
     }
   }
 
-  // selectAllShapes() {
-  //   // Turn on selected flag
-  //   this.selected = true;
-
-  //   // Select clicked points
-  //   for (const point of this.shapes.clickedPoints) {
-  //     point.selected = true;
-  //     point.fillStyle = 'black';
-  //   }
-
-  //   // Select lines
-  //   for (const line of this.shapes.lines) {
-  //     line.selected = true;
-  //     for (const anchor of line.anchors) {
-  //       anchor.selected = true;
-  //       anchor.fillStyle = 'black';
-  //     }
-  //   }
-
-  //   // Select polygons
-  //   for (const polygon of this.shapes.polygons) {
-  //     polygon.selected = true;
-  //     for (const edge of polygon.edges) {
-  //       edge.selected = true;
-  //       for (const anchor of edge.anchors) {
-  //         anchor.selected = true;
-  //         anchor.fillStyle = 'black';
-  //       }
-  //     }
-  //   }
-
-  //   // Select free drawings
-  //   // TO DO
-
-  //   // Select transform shapes
-  //   if (this.transformShape && !this.transforming) {
-  //     // Center of rotation
-  //     if (this.transformShape instanceof Point) {
-  //       this.transformShape.selected = true;
-  //       this.transformShape.fillStyle = 'purple';
-  //     }
-
-  //     // Axis of translation
-  //     else if (this.transformShape instanceof Line) {
-  //       this.transformShape.selected = true;
-  //       this.transformShape.strokeStyle = 'purple';
-  //       for (const anchor of this.transformShape.anchors) {
-  //         anchor.selected = true;
-  //         anchor.fillStyle = 'purple';
-  //       }
-  //     }
-  //   }
-  // }
-
   unselectAllShapes() {
     // Turn off selected flag
     this.selected = false;
@@ -273,7 +230,13 @@ class HypCanvas {
     }
 
     // Unselect free drawings
-    // TO DO
+    for (const freeDrawing of this.shapes.freeDraw) {
+      freeDrawing.selected = false;
+      freeDrawing.startPoint.selected = false;
+      freeDrawing.startPoint.fillStyle = 'gray';
+      freeDrawing.endPoint.selected = false;
+      freeDrawing.endPoint.fillStyle = 'gray';
+    }
 
     // Unselect transform shapes
     if (this.transformShape && !this.transforming) {
@@ -302,7 +265,7 @@ class HypCanvas {
         clickedPoints: [],
         lines: [],
         polygons: [],
-        // freeDraw: [],
+        freeDraw: [],
       },
       transformShape: null
     };
@@ -357,53 +320,92 @@ class HypCanvas {
       this.transformShape = this.transformShape.recalculatePosition(changeX, changeY);
     }
   }
+}
 
-  moveAllShapes(mouseX, mouseY) {
-    // Turn on shapes moved flag
-    this.shapesMoved = true;
+class FreeDrawing {
+  constructor(hypCanvas, startX, startY, closed = false) {
+    // Drawing properties
+    this.hypCanvas = hypCanvas;
+    this.selected = false;
+    this.strokeStyle = hypCanvas.strokeStyle;
+    this.lineWidth = hypCanvas.lineWidth;
+    this.closed = closed;
 
-    // Restore shapes to their position at start of move
-    const startShapes = this.shapeHistory[this.shapeHistory.length - 1];
-    this.shapes = startShapes.shapes;
-    this.transformShape = startShapes.transformShape;
+    // Start and end point
+    this.startPoint = new Point(hypCanvas, startX, startY);
+    this.allPoints = [this.startPoint];
+    this.endPoint = this.startPoint.recalculatePosition(0, 0);
+  }
 
-    // Select all shapes
-    // this.selectAllShapes();
+  copyDrawingProperties(that) {
+    this.hypCanvas = that.hypCanvas;
+    this.selected = that.selected;
+    this.strokeStyle = that.strokeStyle;
+    this.closed = that.closed;
+    this.startPoint.copyDrawingProperties(that.startPoint);
+    this.endPoint.copyDrawingProperties(that.endPoint);
+  }
 
-    // Get starting point, current point, and the line connecting them
-    const start = new Point(this, this.startX, this.startY);
-    const current = new Point(this, mouseX, mouseY);
-    const axis = new Line(this, start, current);
+  recalculatePosition(changeX, changeY) {
+    if (changeX > 0 || changeY > 0) {
+      const selectedPoint = this.startPoint.selected ?
+        this.startPoint :
+        this.endPoint;
+      const changedPoint = selectedPoint.recalculatePosition(changeX, changeY);
+      const axis = new Line(this.hypCanvas, selectedPoint, changedPoint);
+      const mobius = Mobius.TRANSLATE(this.hypCanvas, axis, axis.hypDist());
 
-    // Determine the mobius transformation
-    const translationDistance = .01 * axis.hypDist();
-    const moveMobius = Mobius.TRANSLATE(this, axis, translationDistance);
-
-    // Move all shapes
-    for (const shapeArray of Object.values(this.shapes)) {
-      for (let index = 0; index < shapeArray.length; index++) {
-        shapeArray[index] = moveMobius.applyTo(shapeArray[index]);
+      const adjStartPoint = mobius.applyTo(this.startPoint);
+      const adjDrawing = new FreeDrawing(this.hypCanvas, adjStartPoint.x, adjStartPoint.y, this.closed);
+      for (let i = 1; i < this.allPoints.length; i++) {
+        const adjPoint = mobius.applyTo(this.allPoints[i]);
+        adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
       }
-    }
+      // const adjDrawing = new FreeDrawing(this.hypCanvas, changedPoint.x, changedPoint.y, this.closed);;
+      // if (selectedPoint.isEqualTo(this.startPoint)) {
+      //   for (let i = 1; i < this.allPoints.length; i++) {
+      //     const adjPoint = mobius.applyTo(this.allPoints[i]);
+      //     adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
+      //   }
+      // } else {
+      //   for (let i = this.allPoints.length - 2; i > -1; i--) {
+      //     const adjPoint = mobius.applyTo(this.allPoints[i]);
+      //     adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
+      //   }
+      // }
+      adjDrawing.copyDrawingProperties(this);
 
-    // Move the transform shape
-    if (this.transformShape) {
-      this.transformShape = moveMobius.applyTo(this.transformShape);
+      return adjDrawing;
+    } else {
+      return this;
     }
+  }
 
-    // Move the axes and update the label of the center
-    for (const axesType in this.axes) {
-      const isCenterPoint = this.axes[axesType] instanceof Point;
-      if (isCenterPoint) {
-        const movedCenter = moveMobius.applyTo(this.axes[axesType]);
-        this.axes[axesType].updateLabel(movedCenter.x, movedCenter.y);
-      } else {
-        this.axes[axesType] = moveMobius.applyTo(this.axes[axesType]);
-      }
+  updateEndPoint(mouseX, mouseY) {
+    const currentPoint = new Point(this.hypCanvas, mouseX, mouseY);
+    this.allPoints.push(currentPoint);
+    this.endPoint = currentPoint.recalculatePosition(0, 0);
+  }
+
+  draw(hypCanvas) {
+    this.startPoint.draw(hypCanvas);
+    this.endPoint.draw(hypCanvas);
+
+    const ctx = hypCanvas.ctx;
+    ctx.strokeStyle = this.strokeStyle;
+    ctx.lineWidth = this.lineWidth;
+    ctx.beginPath();
+    for (let i = 0; i < this.allPoints.length - 1; i++) {
+      const first = this.allPoints[i];
+      const second = this.allPoints[i + 1];
+      ctx.moveTo(first.x, first.y);
+      ctx.lineTo(second.x, second.y);
     }
-
-    // Unselect all shapes
-    // this.unselectAllShapes();
+    if (this.closed) {
+      const startPoint = this.startPoint;
+      ctx.lineTo(startPoint.x, startPoint.y);
+    }
+    ctx.stroke();
   }
 }
 
@@ -1055,12 +1057,31 @@ class Mobius {
 
       return adjPoly;
     }
+
+    // Free Drawings
+    else if (shape instanceof FreeDrawing) {
+      // Create a new adjusted free drawing
+      const adjStartPoint = this.applyTo(shape.startPoint);
+      const adjDrawing = new FreeDrawing(shape.hypCanvas, adjStartPoint.x, adjStartPoint.y, shape.closed);
+
+      // Apply the mobius transformation to the rest of the points
+      for (let i = 1; i < shape.allPoints.length; i++) {
+        const point = shape.allPoints[i];
+        const adjPoint = this.applyTo(point);
+        adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
+      }
+      adjDrawing.copyDrawingProperties(shape);
+
+      return adjDrawing;
+    }
   }
 }
 
-export { HypCanvas, Point, Line, Polygon, Mobius }
+export { HypCanvas, FreeDrawing, Point, Line, Polygon, Mobius }
 
-function genRandomTriangle(hypCanvas) {
+function genRandomShape(hypCanvas) {
+  // Generate the vertices
+  const numVertices = Math.floor(Math.random() * 6) + 3;
   const radius = hypCanvas.radius;
   const vertices = [];
   do {
@@ -1071,37 +1092,22 @@ function genRandomTriangle(hypCanvas) {
       im = 2 * Math.random() - 1;
     } while (re**2 + im**2 > 1)
     vertices.push(new Point(hypCanvas, re * radius, im * radius));
-  } while (vertices.length < 3)
+  } while (vertices.length < numVertices)
 
-  const [a, b, c] = vertices;
-  const edges = [
-    new Line(hypCanvas, a, b),
-    new Line(hypCanvas, b, c),
-    new Line(hypCanvas, c, a),
-  ]
-  edges.map(line => line.segment = true);
+  // Reorder the vertices
+  const reorderVertices = Math.random() > 0.5;
+  if (reorderVertices) {
+    vertices.sort((a, b) => a.argument - b.argument);
+  }
+
+  // Create the edges
+  vertices.push(vertices[0]);
+  const edges = [];
+  for (let vertexNum = 0; vertexNum < vertices.length - 1; vertexNum++) {
+    const edge = new Line(hypCanvas, vertices[vertexNum], vertices[vertexNum + 1]);
+    edge.segment = true;
+    edges.push(edge);
+  }
   
   return new Polygon(hypCanvas, ...edges);
-}
-
-function genStartingAxes(hypCanvas) {
-  const vert = new Line(
-    hypCanvas,
-    new Point(hypCanvas, 0, hypCanvas.radius),
-    new Point(hypCanvas, 0, -hypCanvas.radius)
-  );
-  vert.strokeStyle = 'gray';
-  const horz = new Line(
-    hypCanvas,
-    new Point(hypCanvas, hypCanvas.radius, 0),
-    new Point(hypCanvas, -hypCanvas.radius, 0)
-  );
-  horz.strokeStyle = 'gray';
-  const center = new Point(hypCanvas, 0, 0);
-
-  return {
-    vert: vert,
-    horz: horz,
-    center: center,
-  }
 }
