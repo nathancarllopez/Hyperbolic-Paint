@@ -6,11 +6,15 @@ Back in graduate school I studied hyperbolic geometry. I drew lots of (bad) pict
 
 ### Demos:
 
-Users can
+Users can...
 
-- Draw lines, line segments, and polygons.
+- Draw lines, line segments, and polygons, all with different styles.
 
-![zoe pic](./images/IMG_8446.HEIC)
+![Lines, segments, and polygons](./images/demo1.png)
+
+- Drag drawings to change their shape.
+
+![Drag drawings](./images/demo2.gif)
 
 ### Next Steps:
 
