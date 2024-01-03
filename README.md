@@ -1,13 +1,25 @@
 # Hyperbolic-Paint
 
+### About:
+
+Back in graduate school I studied hyperbolic geometry. I drew lots of (bad) pictures in many notebooks and always wished I could generate the pictures I saw in my head. [This project](https://nathancarllopez.github.io/Hyperbolic-Paint/) is my fulfillment of that wish.
+
+### Demos:
+
+Users can
+
+- Draw lines, line segments, and polygons.
+
+![zoe pic](./images/IMG_8446.HEIC)
+
+### Next Steps:
+
+### Acknowledgements: 
+
 This youtube tutorial gave me a lot of help when building the design and function of the toolbars:
 https://www.youtube.com/watch?v=wCwKkT1P7vY
 
 I used W3 schools tooltips page for the toolbar as well: https://www.w3schools.com/howto/howto_css_tooltip.asp
-
-Bugs to fix:
-
-- Fill colors not working
 
 To do:
 
