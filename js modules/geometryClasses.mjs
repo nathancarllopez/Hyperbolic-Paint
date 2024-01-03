@@ -63,6 +63,23 @@ class HypCanvas {
       this.anchorSize = 5;
 
       // Things to draw
+      // const randLine = genRandomLine(this);
+      // randLine.point1.fillStyle = 'green';
+      // let re;
+      // let im;
+      // do {
+      //   re = 2 * Math.random() - 1;
+      //   im = 2 * Math.random() - 1;
+      // } while (re**2 + im**2 > 1);
+      // const randPoint = new Point(this, re * this.radius, im * this.radius);
+      // const dist = randLine.hypDist();
+      // const mobius = Mobius.TRANSLATE(this, randLine, dist);
+      // console.log(dist);
+      // const movedRandPoint = mobius.applyTo(randPoint);
+      // movedRandPoint.fillStyle = 'red';
+      // const movedLine = new Line(this, randPoint, movedRandPoint);
+      // console.log(movedLine.hypDist());
+
       this.shapes = {
         clickedPoints: [],
         lines: [],
@@ -337,15 +354,6 @@ class FreeDrawing {
     this.endPoint = this.startPoint.recalculatePosition(0, 0);
   }
 
-  copyDrawingProperties(that) {
-    this.hypCanvas = that.hypCanvas;
-    this.selected = that.selected;
-    this.strokeStyle = that.strokeStyle;
-    this.closed = that.closed;
-    this.startPoint.copyDrawingProperties(that.startPoint);
-    this.endPoint.copyDrawingProperties(that.endPoint);
-  }
-
   recalculatePosition(changeX, changeY) {
     if (changeX > 0 || changeY > 0) {
       const selectedPoint = this.startPoint.selected ?
@@ -361,18 +369,6 @@ class FreeDrawing {
         const adjPoint = mobius.applyTo(this.allPoints[i]);
         adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
       }
-      // const adjDrawing = new FreeDrawing(this.hypCanvas, changedPoint.x, changedPoint.y, this.closed);;
-      // if (selectedPoint.isEqualTo(this.startPoint)) {
-      //   for (let i = 1; i < this.allPoints.length; i++) {
-      //     const adjPoint = mobius.applyTo(this.allPoints[i]);
-      //     adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
-      //   }
-      // } else {
-      //   for (let i = this.allPoints.length - 2; i > -1; i--) {
-      //     const adjPoint = mobius.applyTo(this.allPoints[i]);
-      //     adjDrawing.updateEndPoint(adjPoint.x, adjPoint.y);
-      //   }
-      // }
       adjDrawing.copyDrawingProperties(this);
 
       return adjDrawing;
@@ -406,6 +402,15 @@ class FreeDrawing {
       ctx.lineTo(startPoint.x, startPoint.y);
     }
     ctx.stroke();
+  }
+
+  copyDrawingProperties(that) {
+    this.hypCanvas = that.hypCanvas;
+    this.selected = that.selected;
+    this.strokeStyle = that.strokeStyle;
+    this.closed = that.closed;
+    this.startPoint.copyDrawingProperties(that.startPoint);
+    this.endPoint.copyDrawingProperties(that.endPoint);
   }
 }
 
@@ -718,13 +723,11 @@ class Line {
       [endpoint1, endpoint2] = this.getEndpoints(false);
     }
 
-    // endpoint1.draw(this.hypCanvas);
-    // endpoint2.draw(this.hypCanvas);
-
     const cRat = endpoint1.crossRatio(this.point2, this.point1, endpoint2);
     const rawDist = Math.log(cRat.x);
-    const dist = Math.abs(rawDist);
-    return dist;
+    return rawDist;
+    // const dist = Math.abs(rawDist);
+    // return dist;
   }
 
   getEndpoints(normalized = true) {
@@ -804,6 +807,15 @@ class Line {
   }
 
   draw(hypCanvas, drawAnchors = false) {
+    // Draw the endpoints
+    if (this.diameter) {
+      this.endpoint1.draw(hypCanvas);
+      this.endpoint2.draw(hypCanvas);
+    } else {
+      const endpoints = this.getEndpoints(false);
+      endpoints.forEach(endpoint => endpoint.draw(hypCanvas));
+    }
+
     // Draw the anchors
     if (!drawAnchors) {
       this.anchors.forEach(anchor => anchor.draw(hypCanvas));
@@ -1078,6 +1090,23 @@ class Mobius {
 }
 
 export { HypCanvas, FreeDrawing, Point, Line, Polygon, Mobius }
+
+function genRandomLine(hypCanvas) {
+  // Generate the anchors
+  const radius = hypCanvas.radius;
+  const anchors = [];
+  do {
+    let re;
+    let im;
+    do {
+      re = 2 * Math.random() - 1;
+      im = 2 * Math.random() - 1;
+    } while (re**2 + im**2 > 1)
+    anchors.push(new Point(hypCanvas, re * radius, im * radius));
+  } while (anchors.length < 2)
+
+  return new Line(hypCanvas, ...anchors);
+}
 
 function genRandomShape(hypCanvas) {
   // Generate the vertices

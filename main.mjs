@@ -24,6 +24,36 @@ import {
  */
 let hypCanvas = createHypCanvas()
 attachDefaultEventListeners(hypCanvas);
+const anchors = [];
+do {
+  let re;
+  let im;
+  do {
+    re = 2 * Math.random() - 1;
+    im = 2 * Math.random() - 1;
+  } while (re**2 + im**2 > 1)
+  const point = new Point(hypCanvas, re * hypCanvas.radius, im * hypCanvas.radius);
+  anchors.push(point);
+} while (anchors.length < 2);
+anchors.forEach(point => console.log(point.displayX, point.displayY));
+console.log(new Line(hypCanvas, ...anchors).hypDist());
+
+// const half = new Point(hypCanvas, 0.5 * hypCanvas.radius, 0);
+// const halfI = new Point(hypCanvas, 0, 0.5 * hypCanvas.radius);
+// const line = new Line(hypCanvas, half, halfI)
+// console.log(line.hypDist());
+// const backwardLine = new Line(hypCanvas, halfI, half);
+// console.log(backwardLine.hypDist());
+
+// const step = 0.1;
+// for (let i = 1; i < 10; i++) {
+//   const zero = new Point(hypCanvas, 0, 0);
+//   const point = new Point(hypCanvas, step * i * hypCanvas.radius, 0);
+//   const line = new Line(hypCanvas, zero, point);
+//   console.log(line.hypDist());
+//   const backwardLine = new Line(hypCanvas, point, zero);
+//   console.log(backwardLine.hypDist());
+// }
 
 /**
  * FUNCTIONS TO RUN AT STARTUP
