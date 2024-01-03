@@ -1,6 +1,6 @@
 # Hyperbolic-Paint
 
-### About:
+## About:
 
 Back in graduate school I studied hyperbolic geometry. I drew lots of (bad) pictures in many notebooks and always wished I could generate the pictures I saw in my head. [This project](https://nathancarllopez.github.io/Hyperbolic-Paint/) is my fulfillment of that wish.
 
