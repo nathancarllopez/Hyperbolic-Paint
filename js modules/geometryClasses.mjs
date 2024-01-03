@@ -56,11 +56,14 @@ class HypCanvas {
 
     // Set this properties to default value
     else {
+      // Retrieve the random color of the color picker
+      const colorPickerDiv = document.querySelector('#colorPickerDiv')
+
       // Store the toolbar info
       this.activeTool = 'clickDrag';
       this.colorType = 'stroke';
       this.strokeStyle = 'black';
-      this.fillStyle = 'orange';
+      this.fillStyle = colorPickerDiv.style.backgroundColor;
       this.lineWidth = 2;
       this.globalAlpha = 0.5;
       this.anchorSize = 5;
@@ -69,7 +72,7 @@ class HypCanvas {
       this.shapes = {
         clickedPoints: [],
         lines: [],
-        polygons: [genRandomTriangle(this)],
+        polygons: [genRandomShape(this)],
         // freeDraw: [],
       };
       this.transformShape = null;
@@ -1060,6 +1063,42 @@ class Mobius {
 
 export { HypCanvas, Point, Line, Polygon, Mobius }
 
+function genRandomShape(hypCanvas) {
+  // Generate vertices
+  const numVertices = Math.floor(5 * Math.random()) + 3;
+  const radius = hypCanvas.radius;
+  const vertices = [];
+  do {
+    let re;
+    let im;
+    do {
+      re = 2 * Math.random() - 1;
+      im = 2 * Math.random() - 1;
+    } while (re**2 + im**2 > 1)
+    vertices.push(new Point(hypCanvas, re * radius, im * radius));
+  } while (vertices.length < numVertices);
+
+  // Reorder the vertices by argument to acheive convexity
+  const convex = Math.random() > 0.5;
+  if (convex) {
+    vertices.sort((a, b) => a.argument - b.argument);
+  }
+
+  // Generate the edges connecting the vertices
+  const edges = [];
+  for (let i = 0; i < vertices.length; i++) {
+    const first = vertices[i];
+    const second = i === vertices.length - 1 ?
+      vertices[0] :
+      vertices[i + 1];
+    const edge = new Line(hypCanvas, first, second);
+    edge.segment = true;
+    edges.push(edge);
+  }
+
+  return new Polygon(hypCanvas, ...edges);
+}
+
 function genRandomTriangle(hypCanvas) {
   const radius = hypCanvas.radius;
   const vertices = [];
@@ -1082,26 +1121,4 @@ function genRandomTriangle(hypCanvas) {
   edges.map(line => line.segment = true);
   
   return new Polygon(hypCanvas, ...edges);
-}
-
-function genStartingAxes(hypCanvas) {
-  const vert = new Line(
-    hypCanvas,
-    new Point(hypCanvas, 0, hypCanvas.radius),
-    new Point(hypCanvas, 0, -hypCanvas.radius)
-  );
-  vert.strokeStyle = 'gray';
-  const horz = new Line(
-    hypCanvas,
-    new Point(hypCanvas, hypCanvas.radius, 0),
-    new Point(hypCanvas, -hypCanvas.radius, 0)
-  );
-  horz.strokeStyle = 'gray';
-  const center = new Point(hypCanvas, 0, 0);
-
-  return {
-    vert: vert,
-    horz: horz,
-    center: center,
-  }
 }
